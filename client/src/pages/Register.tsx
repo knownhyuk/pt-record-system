@@ -23,7 +23,7 @@ function Register() {
   useEffect(() => {
     if (urlInviteCode) {
       setInviteValidating(true)
-      fetch(`/api/invite/${urlInviteCode}`)
+      fetch(`${window.location.origin}/api/invite/${urlInviteCode}`)
         .then(res => res.json())
         .then(data => {
           if (data.valid) {

@@ -14,6 +14,19 @@ app.use(express.json())
 // 정적 파일 서빙 (프로덕션 빌드된 클라이언트)
 app.use(express.static('../client/dist'))
 
+// 데이터베이스 초기화 확인
+try {
+  const db = loadDB()
+  console.log('데이터베이스 초기화 완료:', {
+    users: db.users?.length || 0,
+    inviteCodes: db.invite_codes?.length || 0,
+    ptSessions: db.pt_sessions?.length || 0,
+    comments: db.comments?.length || 0
+  })
+} catch (error) {
+  console.error('데이터베이스 초기화 실패:', error)
+}
+
 console.log('서버 시작 준비 완료')
 
 // ==================== 인증 API ====================
