@@ -38,9 +38,12 @@ function Register() {
 
     try {
       const user = await authAPI.register(name, email, password, role, inviteCode)
+      console.log('회원가입 성공:', user)
       login(user)
+      alert('회원가입이 완료되었습니다!')
       navigate('/')
     } catch (err: any) {
+      console.error('회원가입 실패:', err)
       setError(err.response?.data?.error || '회원가입에 실패했습니다.')
     } finally {
       setLoading(false)

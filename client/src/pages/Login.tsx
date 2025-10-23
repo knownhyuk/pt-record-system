@@ -20,9 +20,12 @@ function Login() {
 
     try {
       const user = await authAPI.login(email, password)
+      console.log('로그인 성공:', user)
       login(user)
+      alert('로그인되었습니다!')
       navigate('/')
     } catch (err: any) {
+      console.error('로그인 실패:', err)
       setError(err.response?.data?.error || '로그인에 실패했습니다.')
     } finally {
       setLoading(false)
