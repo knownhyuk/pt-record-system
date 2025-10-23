@@ -15,16 +15,27 @@ function App() {
   // 페이지 로드 시 로컬 스토리지에서 사용자 정보 복원
   useEffect(() => {
     const savedUser = localStorage.getItem('user')
+    console.log('앱 시작 - 저장된 사용자 정보:', savedUser)
+    
     if (savedUser) {
-      setUser(JSON.parse(savedUser))
+      try {
+        const userData = JSON.parse(savedUser)
+        console.log('파싱된 사용자 정보:', userData)
+        setUser(userData)
+      } catch (error) {
+        console.error('사용자 정보 파싱 실패:', error)
+        localStorage.removeItem('user')
+      }
     }
     setLoading(false)
   }, [])
 
   // 로그인 함수
   const login = (userData: User) => {
+    console.log('로그인 함수 호출:', userData)
     setUser(userData)
     localStorage.setItem('user', JSON.stringify(userData))
+    console.log('사용자 정보 저장 완료')
   }
 
   // 로그아웃 함수

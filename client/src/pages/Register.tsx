@@ -65,7 +65,20 @@ function Register() {
     try {
       const user = await authAPI.register(name, email, password, role, inviteCode)
       console.log('회원가입 성공:', user)
+      console.log('사용자 정보 타입:', typeof user, '역할:', user.role, 'ID:', user.id)
+      
+      // 사용자 정보 검증
+      if (!user || !user.id || !user.role) {
+        throw new Error('사용자 정보가 올바르지 않습니다.')
+      }
+      
       login(user)
+      console.log('로그인 함수 호출 완료')
+      
+      // localStorage 확인
+      const savedUser = localStorage.getItem('user')
+      console.log('저장된 사용자 정보:', savedUser)
+      
       alert('회원가입이 완료되었습니다!')
       navigate('/')
     } catch (err: any) {

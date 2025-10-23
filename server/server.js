@@ -92,13 +92,15 @@ app.post('/api/auth/register', async (req, res) => {
     })
     console.log('생성된 사용자:', user)
 
-    res.json({
+    const responseData = {
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
       trainerId: user.trainer_id,
-    })
+    }
+    console.log('회원가입 응답 데이터:', responseData)
+    res.json(responseData)
   } catch (error) {
     console.error('회원가입 에러:', error)
     res.status(500).json({ error: '회원가입에 실패했습니다.' })
