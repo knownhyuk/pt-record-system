@@ -60,6 +60,8 @@ app.post('/api/auth/register', async (req, res) => {
       }
 
       const invite = inviteCodeDB.findByCode(inviteCode)
+      console.log('초대 코드 검증:', { inviteCode, invite })
+      
       if (!invite) {
         return res.status(400).json({ error: '유효하지 않은 초대 코드입니다.' })
       }
@@ -74,6 +76,7 @@ app.post('/api/auth/register', async (req, res) => {
       }
 
       trainerId = invite.trainer_id
+      console.log('회원가입 - trainerId 설정:', { trainerId, invite })
 
       // 초대 코드 사용 처리
       inviteCodeDB.markAsUsed(inviteCode)
@@ -83,6 +86,7 @@ app.post('/api/auth/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // 사용자 생성
+    console.log('사용자 생성:', { name, email, role, trainerId })
     const user = userDB.create({
       name,
       email,
@@ -90,6 +94,7 @@ app.post('/api/auth/register', async (req, res) => {
       role,
       trainer_id: trainerId,
     })
+    console.log('생성된 사용자:', user)
 
     res.json({
       id: user.id,
@@ -141,6 +146,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/trainer/invite', (req, res) => {
   try {
     const { trainerId } = req.body
+    console.log('초대 코드 생성 요청:', { trainerId, body: req.body })
 
     // 초대 코드 생성 (8자리)
     const code = nanoid(8)

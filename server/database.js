@@ -102,6 +102,7 @@ export const inviteCodeDB = {
       used: false,
       created_at: new Date().toISOString()
     }
+    console.log('초대 코드 생성:', { codeData, newCode })
     db.invite_codes.push(newCode)
     saveDB(db)
     return newCode
