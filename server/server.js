@@ -895,19 +895,28 @@ app.delete('/api/admin/sessions/:sessionId', (req, res) => {
 })
 
 // SPA 라우팅 (모든 API 라우트 뒤에 위치)
-app.get('*', (req, res) => {
-  const fs = require('fs')
-  const path = require('path')
-  const indexPath = path.join(__dirname, '../client/dist/index.html')
-  
-  console.log('SPA 라우팅 요청:', req.path)
-  console.log('Index file path:', indexPath)
-  console.log('Index file exists:', fs.existsSync(indexPath))
-  
-  if (fs.existsSync(indexPath)) {
-    res.sendFile('index.html', { root: '../client/dist' })
-  } else {
-    res.status(404).json({ error: 'Client build not found. Please check if the build completed successfully.' })
+app.get('*', async (req, res) => {
+  try {
+    const fs = await import('fs')
+    const path = await import('path')
+    const { fileURLToPath } = await import('url')
+    
+    const __filename = fileURLToPath(import.meta.url)
+    const __dirname = path.dirname(__filename)
+    const indexPath = path.join(__dirname, '../client/dist/index.html')
+    
+    console.log('SPA 라우팅 요청:', req.path)
+    console.log('Index file path:', indexPath)
+    console.log('Index file exists:', fs.existsSync(indexPath))
+    
+    if (fs.existsSync(indexPath)) {
+      res.sendFile('index.html', { root: path.join(__dirname, '../client/dist') })
+    } else {
+      res.status(404).json({ error: 'Client build not found. Please check if the build completed successfully.' })
+    }
+  } catch (error) {
+    console.error('SPA 라우팅 에러:', error)
+    res.status(500).json({ error: 'SPA 라우팅에 실패했습니다.' })
   }
 })
 
