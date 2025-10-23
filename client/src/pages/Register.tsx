@@ -23,9 +23,21 @@ function Register() {
   useEffect(() => {
     if (urlInviteCode) {
       setInviteValidating(true)
-      fetch(`${window.location.origin}/api/invite/${urlInviteCode}`)
-        .then(res => res.json())
+      fetch(`${window.location.origin}/api/invite/${urlInviteCode}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+        .then(res => {
+          console.log('초대 코드 검증 응답 상태:', res.status)
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+          }
+          return res.json()
+        })
         .then(data => {
+          console.log('초대 코드 검증 응답 데이터:', data)
           if (data.valid) {
             setInviteInfo(data)
             setError('')
@@ -35,7 +47,7 @@ function Register() {
         })
         .catch(err => {
           console.error('초대 코드 검증 실패:', err)
-          setError('초대 코드 검증에 실패했습니다.')
+          setError(`초대 코드 검증에 실패했습니다: ${err.message}`)
         })
         .finally(() => {
           setInviteValidating(false)

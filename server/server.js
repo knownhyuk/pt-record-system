@@ -8,7 +8,10 @@ const app = express()
 const PORT = 3000
 
 // 미들웨어 설정
-app.use(cors())
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://pt-record-system.onrender.com'],
+  credentials: true
+}))
 app.use(express.json())
 
 // 정적 파일 서빙 (프로덕션 빌드된 클라이언트)
@@ -147,14 +150,10 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/invite/:code', (req, res) => {
   try {
     const { code } = req.params
-    console.log('초대 코드 검증 요청:', { code })
+    console.log('초대 코드 검증 요청:', { code, url: req.url, method: req.method })
 
     // 데이터베이스 로드 확인
-    const db = require('./database.js').loadDB()
-    console.log('데이터베이스 로드됨:', { 
-      inviteCodesCount: db.invite_codes?.length || 0,
-      usersCount: db.users?.length || 0 
-    })
+    console.log('초대 코드 검증 시작')
 
     const invite = inviteCodeDB.findByCode(code)
     console.log('찾은 초대 코드:', invite)
