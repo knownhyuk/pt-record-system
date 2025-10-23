@@ -18,7 +18,8 @@
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "types": ["react", "react-dom"]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
