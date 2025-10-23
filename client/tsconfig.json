@@ -19,7 +19,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "noImplicitAny": false,
-    "types": ["react", "react-dom"]
+    "types": ["react", "react-dom", "react-router-dom"]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
