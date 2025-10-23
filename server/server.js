@@ -113,6 +113,7 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body
+    console.log('로그인 시도:', { email })
 
     // 사용자 조회
     const user = userDB.findByEmail(email)
@@ -125,6 +126,8 @@ app.post('/api/auth/login', async (req, res) => {
     if (!isValid) {
       return res.status(401).json({ error: '이메일 또는 비밀번호가 올바르지 않습니다.' })
     }
+
+    console.log('로그인 성공:', { id: user.id, name: user.name, role: user.role, trainerId: user.trainer_id })
 
     // 비밀번호 제외하고 응답
     res.json({
