@@ -173,15 +173,20 @@ app.post('/api/trainer/invite', (req, res) => {
 app.get('/api/trainer/:trainerId/members', (req, res) => {
   try {
     const trainerId = parseInt(req.params.trainerId)
+    console.log('회원 목록 조회 요청:', { trainerId })
+    
     const members = userDB.findMembersByTrainerId(trainerId)
+    console.log('조회된 회원 수:', members.length)
 
-    res.json(members.map(m => ({
+    const result = Array.isArray(members) ? members.map(m => ({
       id: m.id,
       name: m.name,
       email: m.email,
       trainerId: m.trainer_id,
       createdAt: m.created_at,
-    })))
+    })) : []
+
+    res.json(result)
   } catch (error) {
     console.error('회원 목록 조회 에러:', error)
     res.status(500).json({ error: '회원 목록 조회에 실패했습니다.' })
@@ -192,9 +197,12 @@ app.get('/api/trainer/:trainerId/members', (req, res) => {
 app.get('/api/trainer/:trainerId/sessions', (req, res) => {
   try {
     const trainerId = parseInt(req.params.trainerId)
+    console.log('PT 세션 조회 요청:', { trainerId })
+    
     const sessions = ptSessionDB.findByTrainerId(trainerId)
+    console.log('조회된 세션 수:', sessions.length)
 
-    res.json(sessions.map(s => ({
+    const result = Array.isArray(sessions) ? sessions.map(s => ({
       id: s.id,
       trainerId: s.trainer_id,
       memberId: s.member_id,
@@ -205,7 +213,9 @@ app.get('/api/trainer/:trainerId/sessions', (req, res) => {
       confirmedAt: s.confirmed_at,
       createdAt: s.created_at,
       memberName: s.memberName,
-    })))
+    })) : []
+
+    res.json(result)
   } catch (error) {
     console.error('PT 세션 조회 에러:', error)
     res.status(500).json({ error: 'PT 세션 조회에 실패했습니다.' })

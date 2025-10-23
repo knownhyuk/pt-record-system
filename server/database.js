@@ -71,7 +71,8 @@ export const userDB = {
 
   findMembersByTrainerId(trainerId) {
     const db = loadDB()
-    return db.users.filter(u => u.role === 'member' && u.trainer_id === trainerId)
+    const users = db.users || []
+    return users.filter(u => u.role === 'member' && u.trainer_id === trainerId)
   },
 
   findAll() {
@@ -120,10 +121,13 @@ export const inviteCodeDB = {
 export const ptSessionDB = {
   findByTrainerId(trainerId) {
     const db = loadDB()
-    return db.pt_sessions
+    const sessions = db.pt_sessions || []
+    const users = db.users || []
+    
+    return sessions
       .filter(s => s.trainer_id === trainerId)
       .map(session => {
-        const member = db.users.find(u => u.id === session.member_id)
+        const member = users.find(u => u.id === session.member_id)
         return {
           id: session.id,
           trainer_id: session.trainer_id,
