@@ -14,23 +14,6 @@ app.use(express.json())
 // 정적 파일 서빙 (프로덕션 빌드된 클라이언트)
 app.use(express.static('../client/dist'))
 
-// 모든 라우트를 클라이언트로 리다이렉트 (SPA 지원)
-app.get('*', (req, res) => {
-  const fs = require('fs')
-  const path = require('path')
-  const indexPath = path.join(__dirname, '../client/dist/index.html')
-  
-  console.log('Requested path:', req.path)
-  console.log('Index file path:', indexPath)
-  console.log('Index file exists:', fs.existsSync(indexPath))
-  
-  if (fs.existsSync(indexPath)) {
-    res.sendFile('index.html', { root: '../client/dist' })
-  } else {
-    res.status(404).json({ error: 'Client build not found. Please check if the build completed successfully.' })
-  }
-})
-
 console.log('서버 시작 준비 완료')
 
 // ==================== 인증 API ====================
@@ -151,26 +134,45 @@ app.get('/api/invite/:code', (req, res) => {
     const { code } = req.params
     console.log('초대 코드 검증 요청:', { code })
 
+    // 데이터베이스 로드 확인
+    const db = require('./database.js').loadDB()
+    console.log('데이터베이스 로드됨:', { 
+      inviteCodesCount: db.invite_codes?.length || 0,
+      usersCount: db.users?.length || 0 
+    })
+
     const invite = inviteCodeDB.findByCode(code)
+    console.log('찾은 초대 코드:', invite)
+    
     if (!invite) {
+      console.log('초대 코드를 찾을 수 없음:', code)
       return res.status(404).json({ error: '유효하지 않은 초대 코드입니다.' })
     }
 
     if (invite.used) {
+      console.log('이미 사용된 초대 코드:', code)
       return res.status(400).json({ error: '이미 사용된 초대 코드입니다.' })
     }
 
     const expiresAt = new Date(invite.expires_at)
-    if (expiresAt < new Date()) {
+    const now = new Date()
+    console.log('만료일 확인:', { expiresAt: expiresAt.toISOString(), now: now.toISOString() })
+    
+    if (expiresAt < now) {
+      console.log('만료된 초대 코드:', code)
       return res.status(400).json({ error: '만료된 초대 코드입니다.' })
     }
 
     // 트레이너 정보 조회
     const trainer = userDB.findById(invite.trainer_id)
+    console.log('찾은 트레이너:', trainer)
+    
     if (!trainer) {
+      console.log('트레이너를 찾을 수 없음:', invite.trainer_id)
       return res.status(404).json({ error: '트레이너를 찾을 수 없습니다.' })
     }
 
+    console.log('초대 코드 검증 성공:', { code, trainerName: trainer.name })
     res.json({
       valid: true,
       code: invite.code,
@@ -180,6 +182,7 @@ app.get('/api/invite/:code', (req, res) => {
     })
   } catch (error) {
     console.error('초대 코드 검증 에러:', error)
+    console.error('에러 스택:', error.stack)
     res.status(500).json({ error: '초대 코드 검증에 실패했습니다.' })
   }
 })
@@ -871,6 +874,23 @@ app.delete('/api/admin/sessions/:sessionId', (req, res) => {
   } catch (error) {
     console.error('세션 삭제 에러:', error)
     res.status(500).json({ error: '세션 삭제에 실패했습니다.' })
+  }
+})
+
+// SPA 라우팅 (모든 API 라우트 뒤에 위치)
+app.get('*', (req, res) => {
+  const fs = require('fs')
+  const path = require('path')
+  const indexPath = path.join(__dirname, '../client/dist/index.html')
+  
+  console.log('SPA 라우팅 요청:', req.path)
+  console.log('Index file path:', indexPath)
+  console.log('Index file exists:', fs.existsSync(indexPath))
+  
+  if (fs.existsSync(indexPath)) {
+    res.sendFile('index.html', { root: '../client/dist' })
+  } else {
+    res.status(404).json({ error: 'Client build not found. Please check if the build completed successfully.' })
   }
 })
 
