@@ -145,6 +145,45 @@ app.post('/api/auth/login', async (req, res) => {
 
 // ==================== 트레이너 API ====================
 
+// 초대 코드 검증
+app.get('/api/invite/:code', (req, res) => {
+  try {
+    const { code } = req.params
+    console.log('초대 코드 검증 요청:', { code })
+
+    const invite = inviteCodeDB.findByCode(code)
+    if (!invite) {
+      return res.status(404).json({ error: '유효하지 않은 초대 코드입니다.' })
+    }
+
+    if (invite.used) {
+      return res.status(400).json({ error: '이미 사용된 초대 코드입니다.' })
+    }
+
+    const expiresAt = new Date(invite.expires_at)
+    if (expiresAt < new Date()) {
+      return res.status(400).json({ error: '만료된 초대 코드입니다.' })
+    }
+
+    // 트레이너 정보 조회
+    const trainer = userDB.findById(invite.trainer_id)
+    if (!trainer) {
+      return res.status(404).json({ error: '트레이너를 찾을 수 없습니다.' })
+    }
+
+    res.json({
+      valid: true,
+      code: invite.code,
+      trainerId: invite.trainer_id,
+      trainerName: trainer.name,
+      expiresAt: invite.expires_at,
+    })
+  } catch (error) {
+    console.error('초대 코드 검증 에러:', error)
+    res.status(500).json({ error: '초대 코드 검증에 실패했습니다.' })
+  }
+})
+
 // 초대 코드 생성
 app.post('/api/trainer/invite', (req, res) => {
   try {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { authAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
@@ -13,9 +13,35 @@ function Register() {
   const [inviteCode, setInviteCode] = useState(urlInviteCode || '')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [inviteValidating, setInviteValidating] = useState(false)
+  const [inviteInfo, setInviteInfo] = useState<any>(null)
   
   const { login } = useAuth()
   const navigate = useNavigate()
+
+  // 초대 코드 검증
+  useEffect(() => {
+    if (urlInviteCode) {
+      setInviteValidating(true)
+      fetch(`/api/invite/${urlInviteCode}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid) {
+            setInviteInfo(data)
+            setError('')
+          } else {
+            setError(data.error || '유효하지 않은 초대 코드입니다.')
+          }
+        })
+        .catch(err => {
+          console.error('초대 코드 검증 실패:', err)
+          setError('초대 코드 검증에 실패했습니다.')
+        })
+        .finally(() => {
+          setInviteValidating(false)
+        })
+    }
+  }, [urlInviteCode])
 
   // 회원가입 처리
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,6 +95,29 @@ function Register() {
         {/* 회원가입 폼 */}
         <div className="backdrop-blur-xl bg-white/80 rounded-3xl shadow-2xl p-8 border border-gray-200/50">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">회원가입</h2>
+          
+          {/* 초대 코드 검증 중 */}
+          {inviteValidating && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
+                <span className="text-blue-700">초대 코드를 검증하는 중...</span>
+              </div>
+            </div>
+          )}
+
+          {/* 초대 코드 정보 */}
+          {inviteInfo && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center mb-2">
+                <span className="text-green-600 mr-2">✅</span>
+                <span className="text-green-700 font-medium">유효한 초대 코드입니다</span>
+              </div>
+              <p className="text-green-600 text-sm">
+                <strong>{inviteInfo.trainerName}</strong> 트레이너님의 초대를 받았습니다.
+              </p>
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* 역할 선택 (초대 코드가 없을 때만) */}
