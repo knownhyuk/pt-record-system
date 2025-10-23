@@ -80,7 +80,12 @@ function Register() {
       console.log('저장된 사용자 정보:', savedUser)
       
       alert('회원가입이 완료되었습니다!')
-      navigate('/')
+      
+      // 잠시 대기 후 페이지 이동 (상태 업데이트 시간 확보)
+      setTimeout(() => {
+        console.log('페이지 이동 전 최종 사용자 상태 확인')
+        navigate('/')
+      }, 100)
     } catch (err: any) {
       console.error('회원가입 실패:', err)
       setError(err.response?.data?.error || '회원가입에 실패했습니다.')

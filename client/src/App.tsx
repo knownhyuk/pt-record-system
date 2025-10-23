@@ -12,6 +12,11 @@ function App() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // 사용자 상태 변경 감지
+  useEffect(() => {
+    console.log('사용자 상태 변경:', user)
+  }, [user])
+
   // 페이지 로드 시 로컬 스토리지에서 사용자 정보 복원
   useEffect(() => {
     const savedUser = localStorage.getItem('user')
