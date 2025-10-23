@@ -16,7 +16,19 @@ app.use(express.static('../client/dist'))
 
 // 모든 라우트를 클라이언트로 리다이렉트 (SPA 지원)
 app.get('*', (req, res) => {
-  res.sendFile('index.html', { root: '../client/dist' })
+  const fs = require('fs')
+  const path = require('path')
+  const indexPath = path.join(__dirname, '../client/dist/index.html')
+  
+  console.log('Requested path:', req.path)
+  console.log('Index file path:', indexPath)
+  console.log('Index file exists:', fs.existsSync(indexPath))
+  
+  if (fs.existsSync(indexPath)) {
+    res.sendFile('index.html', { root: '../client/dist' })
+  } else {
+    res.status(404).json({ error: 'Client build not found. Please check if the build completed successfully.' })
+  }
 })
 
 console.log('서버 시작 준비 완료')
