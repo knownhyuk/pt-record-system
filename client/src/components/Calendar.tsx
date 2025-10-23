@@ -99,7 +99,7 @@ function Calendar({ sessions, onDateClick, selectedDate }: CalendarProps) {
 
       {/* 날짜 그리드 */}
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
-        {days.map((day) => {
+        {(Array.isArray(days) ? days : []).map((day) => {
           const isCurrentMonth = isSameMonth(day, currentMonth)
           const isSelected = selectedDate && isSameDay(day, selectedDate)
           const dateSessions = getSessionsForDate(day)
@@ -125,7 +125,7 @@ function Calendar({ sessions, onDateClick, selectedDate }: CalendarProps) {
               {/* 세션 정보 표시 (회원명 + 시간) */}
               {dateSessions.length > 0 && (
                 <div className="w-full space-y-0.5 mt-2">
-                  {dateSessions.slice(0, 3).map((session, idx) => (
+                  {(Array.isArray(dateSessions) ? dateSessions.slice(0, 3) : []).map((session, idx) => (
                     <div
                       key={session.id}
                       className={`text-xs px-1 py-0.5 rounded truncate ${

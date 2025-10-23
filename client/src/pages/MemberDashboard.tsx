@@ -26,10 +26,16 @@ function MemberDashboard() {
         memberAPI.getPTSessions(user!.id),
         memberAPI.getTrainer(user!.id),
       ])
-      setSessions(sessionsData)
-      setTrainer(trainerData)
+      
+      // 데이터 안전성 검증
+      setSessions(Array.isArray(sessionsData) ? sessionsData : [])
+      setTrainer(trainerData || null)
+      
+      console.log('로드된 데이터:', { sessionsData, trainerData })
     } catch (error) {
       console.error('데이터 로드 실패:', error)
+      setSessions([])
+      setTrainer(null)
     } finally {
       setLoading(false)
     }
@@ -148,7 +154,7 @@ function MemberDashboard() {
                   </span>
                 </h2>
                 <div className="space-y-3">
-                  {pendingSessions.map(session => (
+                  {(Array.isArray(pendingSessions) ? pendingSessions : []).map(session => (
                     <div
                       key={session.id}
                       className="border-2 border-green-300 bg-green-50 rounded-lg p-4"
@@ -190,7 +196,7 @@ function MemberDashboard() {
                   {format(selectedDate, 'M월 d일')} 일정
                 </h2>
                 <div className="space-y-3">
-                  {selectedDateSessions.map(session => (
+                  {(Array.isArray(selectedDateSessions) ? selectedDateSessions : []).map(session => (
                     <div
                       key={session.id}
                       className={`rounded-lg p-4 ${

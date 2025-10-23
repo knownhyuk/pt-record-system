@@ -44,7 +44,7 @@ export const trainerAPI = {
   // 내 회원 목록 조회
   getMembers: async (trainerId: number): Promise<Member[]> => {
     const response = await api.get(`/trainer/${trainerId}/members`)
-    return response.data
+    return Array.isArray(response.data) ? response.data : []
   },
 
   // PT 세션 생성 (트레이너가 제안)
@@ -85,7 +85,7 @@ export const trainerAPI = {
   // 트레이너의 모든 PT 세션 조회
   getPTSessions: async (trainerId: number): Promise<PTSession[]> => {
     const response = await api.get(`/trainer/${trainerId}/sessions`)
-    return response.data
+    return Array.isArray(response.data) ? response.data : []
   },
 
   // PT 세션 확인 (트레이너)
@@ -126,7 +126,7 @@ export const memberAPI = {
   // 회원의 PT 세션 조회
   getPTSessions: async (memberId: number): Promise<PTSession[]> => {
     const response = await api.get(`/member/${memberId}/sessions`)
-    return response.data
+    return Array.isArray(response.data) ? response.data : []
   },
 
   // PT 세션 확인 (회원)
@@ -151,7 +151,7 @@ export const commentAPI = {
     const response = await api.get(`/sessions/${sessionId}/comments`, {
       params: { role }
     })
-    return response.data
+    return Array.isArray(response.data) ? response.data : []
   },
 
   // 코멘트 생성

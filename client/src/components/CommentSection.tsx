@@ -156,7 +156,7 @@ function CommentSection({ sessionId, trainerId, role }: CommentSectionProps) {
                 <p className="text-sm text-gray-400 mt-1">첫 번째 코멘트를 작성해보세요</p>
               </div>
             ) : (
-              comments.map(comment => (
+              (Array.isArray(comments) ? comments : []).map(comment => (
                 <div
                   key={comment.id}
                   className={`rounded-2xl p-5 transition-all duration-200 hover:shadow-md ${

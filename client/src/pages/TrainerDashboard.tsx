@@ -39,10 +39,16 @@ function TrainerDashboard() {
         trainerAPI.getMembers(user!.id),
         trainerAPI.getPTSessions(user!.id),
       ])
-      setMembers(membersData)
-      setSessions(sessionsData)
+      
+      // 데이터 안전성 검증
+      setMembers(Array.isArray(membersData) ? membersData : [])
+      setSessions(Array.isArray(sessionsData) ? sessionsData : [])
+      
+      console.log('로드된 데이터:', { membersData, sessionsData })
     } catch (error) {
       console.error('데이터 로드 실패:', error)
+      setMembers([])
+      setSessions([])
     } finally {
       setLoading(false)
     }
@@ -364,7 +370,7 @@ function TrainerDashboard() {
                     📋 회원을 선택하면 해당 회원의 일정만 표시됩니다
                   </p>
                   <div className="space-y-2">
-                    {members.map(member => {
+                    {(Array.isArray(members) ? members : []).map(member => {
                       const memberSessionCount = sessions.filter(s => s.memberId === member.id).length
                       const confirmedCount = sessions.filter(
                         s => s.memberId === member.id && s.trainerConfirmed && s.memberConfirmed
@@ -547,7 +553,7 @@ function TrainerDashboard() {
                   // 전체 일정 보기 모드
                   <div className="space-y-3">
                     {getSessionsForSelectedDate().length > 0 ? (
-                      getSessionsForSelectedDate().map(session => (
+                      (Array.isArray(getSessionsForSelectedDate()) ? getSessionsForSelectedDate() : []).map(session => (
                     <div
                       key={session.id}
                       className={`rounded-lg p-4 ${
@@ -660,7 +666,7 @@ function TrainerDashboard() {
                   // 개별 회원 보기 모드 (기존 로직)
                   <div className="space-y-3">
                     {selectedDateSessions.length > 0 ? (
-                      selectedDateSessions.map(session => (
+                      (Array.isArray(selectedDateSessions) ? selectedDateSessions : []).map(session => (
                         <div
                           key={session.id}
                           className={`rounded-lg p-4 ${
