@@ -72,6 +72,17 @@ export const userDB = {
   findMembersByTrainerId(trainerId) {
     const db = loadDB()
     return db.users.filter(u => u.role === 'member' && u.trainer_id === trainerId)
+  },
+
+  findAll() {
+    const db = loadDB()
+    return db.users
+  },
+
+  delete(id) {
+    const db = loadDB()
+    db.users = db.users.filter(u => u.id !== id)
+    saveDB(db)
   }
 }
 
@@ -239,6 +250,25 @@ export const ptSessionDB = {
       return true
     }
     return false
+  },
+
+  findAll() {
+    const db = loadDB()
+    return db.pt_sessions.map(session => {
+      const trainer = db.users.find(u => u.id === session.trainer_id)
+      const member = db.users.find(u => u.id === session.member_id)
+      return {
+        ...session,
+        trainerName: trainer ? trainer.name : 'Unknown',
+        memberName: member ? member.name : 'Unknown'
+      }
+    })
+  },
+
+  deleteByUserId(userId) {
+    const db = loadDB()
+    db.pt_sessions = db.pt_sessions.filter(s => s.trainer_id !== userId && s.member_id !== userId)
+    saveDB(db)
   }
 }
 
@@ -311,6 +341,25 @@ export const commentDB = {
       console.log(`세션 ${sessionId}의 코멘트 ${deletedCount}개 삭제됨`)
     }
     return deletedCount
+  },
+
+  findAll() {
+    const db = loadDB()
+    return db.comments.map(comment => {
+      const user = db.users.find(u => u.id === comment.user_id)
+      const session = db.pt_sessions.find(s => s.id === comment.session_id)
+      return {
+        ...comment,
+        userName: user ? user.name : 'Unknown',
+        sessionDate: session ? session.date : 'Unknown'
+      }
+    })
+  },
+
+  deleteByUserId(userId) {
+    const db = loadDB()
+    db.comments = db.comments.filter(c => c.user_id !== userId)
+    saveDB(db)
   }
 }
 

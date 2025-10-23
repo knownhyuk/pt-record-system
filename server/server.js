@@ -689,6 +689,121 @@ app.delete('/api/comments/:commentId', (req, res) => {
   }
 })
 
+// ==================== 관리자 API ====================
+
+// 모든 사용자 조회 (관리자만)
+app.get('/api/admin/users', (req, res) => {
+  try {
+    const { userId } = req.query
+    
+    // 관리자 권한 확인
+    const user = userDB.findById(parseInt(userId))
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ error: '관리자 권한이 필요합니다.' })
+    }
+    
+    const users = userDB.findAll()
+    res.json(users)
+  } catch (error) {
+    console.error('사용자 조회 에러:', error)
+    res.status(500).json({ error: '사용자 조회에 실패했습니다.' })
+  }
+})
+
+// 모든 PT 세션 조회 (관리자만)
+app.get('/api/admin/sessions', (req, res) => {
+  try {
+    const { userId } = req.query
+    
+    // 관리자 권한 확인
+    const user = userDB.findById(parseInt(userId))
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ error: '관리자 권한이 필요합니다.' })
+    }
+    
+    const sessions = ptSessionDB.findAll()
+    res.json(sessions)
+  } catch (error) {
+    console.error('세션 조회 에러:', error)
+    res.status(500).json({ error: '세션 조회에 실패했습니다.' })
+  }
+})
+
+// 모든 코멘트 조회 (관리자만)
+app.get('/api/admin/comments', (req, res) => {
+  try {
+    const { userId } = req.query
+    
+    // 관리자 권한 확인
+    const user = userDB.findById(parseInt(userId))
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ error: '관리자 권한이 필요합니다.' })
+    }
+    
+    const comments = commentDB.findAll()
+    res.json(comments)
+  } catch (error) {
+    console.error('코멘트 조회 에러:', error)
+    res.status(500).json({ error: '코멘트 조회에 실패했습니다.' })
+  }
+})
+
+// 사용자 삭제 (관리자만)
+app.delete('/api/admin/users/:userId', (req, res) => {
+  try {
+    const { userId } = req.params
+    const { adminId } = req.body
+    
+    // 관리자 권한 확인
+    const admin = userDB.findById(parseInt(adminId))
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({ error: '관리자 권한이 필요합니다.' })
+    }
+    
+    // 관리자 자신은 삭제할 수 없음
+    if (parseInt(userId) === parseInt(adminId)) {
+      return res.status(400).json({ error: '관리자 계정은 삭제할 수 없습니다.' })
+    }
+    
+    // 사용자 삭제
+    userDB.delete(parseInt(userId))
+    
+    // 관련 데이터 삭제
+    ptSessionDB.deleteByUserId(parseInt(userId))
+    commentDB.deleteByUserId(parseInt(userId))
+    
+    res.json({ success: true })
+  } catch (error) {
+    console.error('사용자 삭제 에러:', error)
+    res.status(500).json({ error: '사용자 삭제에 실패했습니다.' })
+  }
+})
+
+// PT 세션 삭제 (관리자만)
+app.delete('/api/admin/sessions/:sessionId', (req, res) => {
+  try {
+    const { sessionId } = req.params
+    const { adminId } = req.body
+    
+    // 관리자 권한 확인
+    const admin = userDB.findById(parseInt(adminId))
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({ error: '관리자 권한이 필요합니다.' })
+    }
+    
+    // 세션 삭제
+    ptSessionDB.delete(parseInt(sessionId))
+    
+    // 관련 코멘트 삭제
+    commentDB.deleteBySessionId(parseInt(sessionId))
+    
+    res.json({ success: true })
+  } catch (error) {
+    console.error('세션 삭제 에러:', error)
+    res.status(500).json({ error: '세션 삭제에 실패했습니다.' })
+  }
+})
+
 // 서버 시작
 app.listen(PORT, () => {
   console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`)
