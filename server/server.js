@@ -12,11 +12,11 @@ app.use(cors())
 app.use(express.json())
 
 // 정적 파일 서빙 (프로덕션 빌드된 클라이언트)
-app.use(express.static('../client/dist'))
+app.use(express.static('./client/dist'))
 
 // 모든 라우트를 클라이언트로 리다이렉트 (SPA 지원)
 app.get('*', (req, res) => {
-  res.sendFile('index.html', { root: '../client/dist' })
+  res.sendFile('index.html', { root: './client/dist' })
 })
 
 console.log('서버 시작 준비 완료')
