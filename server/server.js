@@ -160,6 +160,9 @@ app.get('/api/invite/:code', (req, res) => {
     
     if (!invite) {
       console.log('초대 코드를 찾을 수 없음:', code)
+      // 모든 초대 코드 목록 출력 (디버깅용)
+      const allInvites = inviteCodeDB.findAll ? inviteCodeDB.findAll() : []
+      console.log('현재 모든 초대 코드:', allInvites)
       return res.status(404).json({ error: '유효하지 않은 초대 코드입니다.' })
     }
 

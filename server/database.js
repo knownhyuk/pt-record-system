@@ -115,6 +115,11 @@ export const inviteCodeDB = {
       invite.used = true
       saveDB(db)
     }
+  },
+
+  findAll() {
+    const db = loadDB()
+    return db.invite_codes || []
   }
 }
 
