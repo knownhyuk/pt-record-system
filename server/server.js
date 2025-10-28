@@ -16,7 +16,7 @@ app.use(express.json())
 
 // 정적 파일 서빙 (프로덕션 빌드된 클라이언트)
 const clientDistPath = process.env.NODE_ENV === 'production' 
-  ? './client/dist' 
+  ? '../client/dist' 
   : '../client/dist'
 
 console.log('정적 파일 경로:', clientDistPath)

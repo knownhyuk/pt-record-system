@@ -2,7 +2,7 @@ services:
   - type: web
     name: pt-record-system
     env: node
-    buildCommand: npm run build
+    buildCommand: npm run build:all
     startCommand: npm start
     envVars:
       - key: NODE_ENV
