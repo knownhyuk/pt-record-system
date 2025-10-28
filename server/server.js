@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import bcrypt from 'bcryptjs'
 import { nanoid } from 'nanoid'
-import { userDB, inviteCodeDB, ptSessionDB, commentDB, loadDB, saveDB } from './database.js'
+import { userDB, inviteCodeDB, ptSessionDB, commentDB, loadDB, saveDB } from './database-persistent.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -147,7 +147,7 @@ app.post('/api/auth/register', async (req, res) => {
       email,
       password: hashedPassword,
       role,
-      trainer_id: trainerId,
+      trainerId: trainerId,
     })
     console.log('생성된 사용자:', user)
 
@@ -217,7 +217,7 @@ app.get('/api/invite/:code', (req, res) => {
     if (!invite) {
       console.log('초대 코드를 찾을 수 없음:', code)
       // 모든 초대 코드 목록 출력 (디버깅용)
-      const allInvites = inviteCodeDB.findAll ? inviteCodeDB.findAll() : []
+      const allInvites = inviteCodeDB.getByTrainerId ? inviteCodeDB.getByTrainerId(1) : []
       console.log('현재 모든 초대 코드:', allInvites)
       return res.status(404).json({ error: '유효하지 않은 초대 코드입니다.' })
     }

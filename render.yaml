@@ -9,3 +9,7 @@ services:
         value: production
       - key: PORT
         value: 10000
+    disk:
+      name: persistent-disk
+      mountPath: /opt/render/project/persistent
+      sizeGB: 1
