@@ -70,42 +70,49 @@ function MemberDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 헤더 - 안드로이드 머티리얼 디자인 */}
-      <header className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-100">
+      {/* 헤더 - 현대적인 그라데이션 디자인 */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-xl border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-4 w-full sm:w-auto">
-              {/* 메인 아이콘 - 머티리얼 디자인 */}
-              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center shadow-sm">
-                <span className="text-2xl text-white">💪</span>
+              {/* 메인 아이콘 - 그라데이션 디자인 */}
+              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
               </div>
               
               {/* 제목과 정보 */}
               <div className="flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <h1 className="text-2xl font-medium text-gray-900 truncate">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent truncate">
                     회원 대시보드
                   </h1>
-                  <div className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md">
-                    ACTIVE
+                  <div className="px-4 py-1.5 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 text-sm font-bold rounded-xl border border-purple-200 shadow-sm">
+                    🏃 ACTIVE
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
-                  안녕하세요, <span className="font-medium text-gray-900">{user?.name}</span>님! 오늘도 화이팅! 💪
+                  안녕하세요, <span className="font-semibold text-gray-900">{user?.name}</span>님! 오늘도 화이팅! 💪
                 </p>
                 <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
-                  <span>{sessions.length}개의 일정</span>
-                  <span>•</span>
-                  <span>{sessions.filter(s => s.trainerConfirmed && s.memberConfirmed).length}개 완료</span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="font-medium">{sessions.length}개의 일정</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="font-medium">{sessions.filter(s => s.trainerConfirmed && s.memberConfirmed).length}개 완료</span>
+                  </div>
                 </div>
               </div>
             </div>
             
-            {/* 로그아웃 버튼 - 머티리얼 디자인 */}
+            {/* 로그아웃 버튼 - 현대적인 그라데이션 디자인 */}
             <button
               onClick={logout}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200 w-full sm:w-auto"
+              className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
             >
               로그아웃
             </button>
