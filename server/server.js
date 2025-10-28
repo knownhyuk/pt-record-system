@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid'
 import { userDB, inviteCodeDB, ptSessionDB, commentDB, loadDB, saveDB } from './database.js'
 
 const app = express()
-const PORT = 3000
+const PORT = process.env.PORT || 3000
 
 // 미들웨어 설정
 app.use(cors({
@@ -15,20 +15,71 @@ app.use(cors({
 app.use(express.json())
 
 // 정적 파일 서빙 (프로덕션 빌드된 클라이언트)
-app.use(express.static('../client/dist'))
+app.use(express.static(process.env.NODE_ENV === 'production' ? './client/dist' : '../client/dist'))
 
-// 데이터베이스 초기화 확인
-try {
-  const db = loadDB()
-  console.log('데이터베이스 초기화 완료:', {
-    users: db.users?.length || 0,
-    inviteCodes: db.invite_codes?.length || 0,
-    ptSessions: db.pt_sessions?.length || 0,
-    comments: db.comments?.length || 0
-  })
-} catch (error) {
-  console.error('데이터베이스 초기화 실패:', error)
+// 데이터베이스 초기화 및 관리자 계정 확인
+async function initializeDatabase() {
+  try {
+    const db = loadDB()
+    console.log('데이터베이스 초기화 완료:', {
+      users: db.users?.length || 0,
+      inviteCodes: db.invite_codes?.length || 0,
+      ptSessions: db.pt_sessions?.length || 0,
+      comments: db.comments?.length || 0
+    })
+
+    // 관리자 계정이 없으면 생성
+    const existingAdmin = userDB.findByEmail('admin@pt-record.com')
+    if (!existingAdmin) {
+      console.log('관리자 계정이 없습니다. 생성 중...')
+      const hashedPassword = await bcrypt.hash('admin123', 10)
+      const adminUser = {
+        id: 1,
+        name: '관리자',
+        email: 'admin@pt-record.com',
+        password: hashedPassword,
+        role: 'admin',
+        created_at: new Date().toISOString()
+      }
+      
+      // 기존 사용자들 ID 재할당 (관리자가 ID 1을 사용하도록)
+      if (db.users.length > 0) {
+        db.users = db.users.map((user, index) => ({
+          ...user,
+          id: index + 2
+        }))
+        
+        // 다른 테이블들의 ID도 재할당
+        db.pt_sessions = db.pt_sessions.map(session => ({
+          ...session,
+          trainer_id: session.trainer_id === 1 ? 1 : session.trainer_id + 1,
+          member_id: session.member_id === 1 ? 1 : session.member_id + 1
+        }))
+        
+        db.comments = db.comments.map(comment => ({
+          ...comment,
+          user_id: comment.user_id === 1 ? 1 : comment.user_id + 1
+        }))
+      }
+      
+      // 관리자 계정을 첫 번째로 추가
+      db.users.unshift(adminUser)
+      db.counters.users = Math.max(db.counters.users, db.users.length)
+      
+      saveDB(db)
+      console.log('✅ 관리자 계정이 생성되었습니다.')
+      console.log('📧 이메일: admin@pt-record.com')
+      console.log('🔑 비밀번호: admin123')
+    } else {
+      console.log('✅ 관리자 계정이 이미 존재합니다.')
+    }
+  } catch (error) {
+    console.error('데이터베이스 초기화 실패:', error)
+  }
 }
+
+// 데이터베이스 초기화 실행
+await initializeDatabase()
 
 console.log('서버 시작 준비 완료')
 
@@ -1113,14 +1164,15 @@ app.get('*', async (req, res) => {
     
     const __filename = fileURLToPath(import.meta.url)
     const __dirname = path.dirname(__filename)
-    const indexPath = path.join(__dirname, '../client/dist/index.html')
+    const clientDistPath = process.env.NODE_ENV === 'production' ? './client/dist' : '../client/dist'
+    const indexPath = path.join(__dirname, clientDistPath, 'index.html')
     
     console.log('SPA 라우팅 요청:', req.path)
     console.log('Index file path:', indexPath)
     console.log('Index file exists:', fs.existsSync(indexPath))
     
     if (fs.existsSync(indexPath)) {
-      res.sendFile('index.html', { root: path.join(__dirname, '../client/dist') })
+      res.sendFile('index.html', { root: path.join(__dirname, clientDistPath) })
     } else {
       res.status(404).json({ error: 'Client build not found. Please check if the build completed successfully.' })
     }
