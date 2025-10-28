@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import bcrypt from 'bcryptjs'
 import { nanoid } from 'nanoid'
-import { userDB, inviteCodeDB, ptSessionDB, commentDB } from './database.js'
+import { userDB, inviteCodeDB, ptSessionDB, commentDB, loadDB, saveDB } from './database.js'
 
 const app = express()
 const PORT = 3000
@@ -891,6 +891,216 @@ app.delete('/api/admin/sessions/:sessionId', (req, res) => {
   } catch (error) {
     console.error('세션 삭제 에러:', error)
     res.status(500).json({ error: '세션 삭제에 실패했습니다.' })
+  }
+})
+
+// ==================== 관리자 API ====================
+
+// 관리자 통계 조회
+app.get('/api/admin/stats', (req, res) => {
+  try {
+    const db = loadDB()
+    
+    const stats = {
+      totalUsers: db.users.length,
+      totalTrainers: db.users.filter(user => user.role === 'trainer').length,
+      totalMembers: db.users.filter(user => user.role === 'member').length,
+      totalSessions: db.pt_sessions.length,
+      pendingSessions: db.pt_sessions.filter(session => 
+        !session.trainer_confirmed || !session.member_confirmed
+      ).length,
+      totalInviteCodes: db.invite_codes.length,
+      activeInviteCodes: db.invite_codes.filter(code => 
+        !code.used && new Date(code.expires_at) > new Date()
+      ).length
+    }
+    
+    res.json(stats)
+  } catch (error) {
+    console.error('관리자 통계 조회 오류:', error)
+    res.status(500).json({ error: '통계 조회에 실패했습니다.' })
+  }
+})
+
+// 전체 사용자 목록 조회
+app.get('/api/admin/users', (req, res) => {
+  try {
+    console.log('사용자 목록 조회 요청')
+    const db = loadDB()
+    console.log('데이터베이스 로드 완료:', db.users ? db.users.length : 0, '명')
+    
+    if (!db.users) {
+      return res.json([])
+    }
+    
+    const users = db.users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      trainer_id: user.trainer_id,
+      created_at: user.created_at
+    }))
+    
+    console.log('사용자 목록 반환:', users.length, '명')
+    res.json(users)
+  } catch (error) {
+    console.error('사용자 목록 조회 오류:', error)
+    res.status(500).json({ error: '사용자 목록 조회에 실패했습니다.', details: error.message })
+  }
+})
+
+// 트레이너 목록 조회
+app.get('/api/admin/trainers', (req, res) => {
+  try {
+    const db = loadDB()
+    
+    const trainers = db.users
+      .filter(user => user.role === 'trainer')
+      .map(trainer => {
+        const memberCount = db.users.filter(user => user.trainer_id === trainer.id).length
+        const sessionCount = db.pt_sessions.filter(session => session.trainer_id === trainer.id).length
+        
+        return {
+          id: trainer.id,
+          name: trainer.name,
+          email: trainer.email,
+          memberCount,
+          sessionCount,
+          created_at: trainer.created_at
+        }
+      })
+    
+    res.json(trainers)
+  } catch (error) {
+    console.error('트레이너 목록 조회 오류:', error)
+    res.status(500).json({ error: '트레이너 목록 조회에 실패했습니다.' })
+  }
+})
+
+// 회원 목록 조회
+app.get('/api/admin/members', (req, res) => {
+  try {
+    const db = loadDB()
+    
+    const members = db.users
+      .filter(user => user.role === 'member')
+      .map(member => {
+        const trainer = db.users.find(user => user.id === member.trainer_id)
+        const sessionCount = db.pt_sessions.filter(session => session.member_id === member.id).length
+        
+        return {
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          trainer: trainer ? { id: trainer.id, name: trainer.name, email: trainer.email } : null,
+          sessionCount,
+          created_at: member.created_at
+        }
+      })
+    
+    res.json(members)
+  } catch (error) {
+    console.error('회원 목록 조회 오류:', error)
+    res.status(500).json({ error: '회원 목록 조회에 실패했습니다.' })
+  }
+})
+
+// 최근 활동 조회
+app.get('/api/admin/recent-activity', (req, res) => {
+  try {
+    const db = loadDB()
+    
+    // 최근 PT 세션들
+    const recentSessions = db.pt_sessions
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 10)
+      .map(session => {
+        const trainer = db.users.find(user => user.id === session.trainer_id)
+        const member = db.users.find(user => user.id === session.member_id)
+        
+        return {
+          id: session.id,
+          type: 'pt_session',
+          description: `${trainer?.name || '알 수 없음'} 트레이너와 ${member?.name || '알 수 없음'} 회원의 PT 세션`,
+          date: session.date,
+          status: session.trainer_confirmed && session.member_confirmed ? 'confirmed' : 'pending',
+          created_at: session.created_at
+        }
+      })
+    
+    // 최근 가입자들
+    const recentUsers = db.users
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5)
+      .map(user => ({
+        id: user.id,
+        type: 'user_registration',
+        description: `${user.name}님이 ${user.role === 'trainer' ? '트레이너' : '회원'}으로 가입했습니다.`,
+        created_at: user.created_at
+      }))
+    
+    // 최근 초대 코드 생성
+    const recentInviteCodes = db.invite_codes
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5)
+      .map(code => {
+        const trainer = db.users.find(user => user.id === code.trainer_id)
+        return {
+          id: code.id,
+          type: 'invite_code',
+          description: `${trainer?.name || '알 수 없음'} 트레이너가 초대 코드를 생성했습니다.`,
+          code: code.code,
+          created_at: code.created_at
+        }
+      })
+    
+    // 모든 활동을 시간순으로 정렬
+    const allActivities = [...recentSessions, ...recentUsers, ...recentInviteCodes]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 20)
+    
+    res.json(allActivities)
+  } catch (error) {
+    console.error('최근 활동 조회 오류:', error)
+    res.status(500).json({ error: '최근 활동 조회에 실패했습니다.' })
+  }
+})
+
+// 사용자 삭제 (관리자만)
+app.delete('/api/admin/users/:userId', (req, res) => {
+  try {
+    const { userId } = req.params
+    const db = loadDB()
+    
+    const user = db.users.find(u => u.id === parseInt(userId))
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' })
+    }
+    
+    // 관리자는 삭제할 수 없음
+    if (user.role === 'admin') {
+      return res.status(403).json({ error: '관리자 계정은 삭제할 수 없습니다.' })
+    }
+    
+    // 관련 데이터 정리
+    db.users = db.users.filter(u => u.id !== parseInt(userId))
+    db.pt_sessions = db.pt_sessions.filter(session => 
+      session.trainer_id !== parseInt(userId) && session.member_id !== parseInt(userId)
+    )
+    db.invite_codes = db.invite_codes.filter(code => code.trainer_id !== parseInt(userId))
+    
+    // 회원인 경우 trainer_id 정리
+    db.users = db.users.map(u => 
+      u.trainer_id === parseInt(userId) ? { ...u, trainer_id: null } : u
+    )
+    
+    saveDB(db)
+    
+    res.json({ message: '사용자가 삭제되었습니다.' })
+  } catch (error) {
+    console.error('사용자 삭제 오류:', error)
+    res.status(500).json({ error: '사용자 삭제에 실패했습니다.' })
   }
 })
 

@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import TrainerDashboard from './pages/TrainerDashboard'
 import MemberDashboard from './pages/MemberDashboard'
+import AdminDashboard from './pages/AdminDashboard'
 import { AuthContext } from './contexts/AuthContext'
 import type { User } from './types'
 
@@ -70,7 +71,9 @@ function App() {
             path="/"
             element={
               user ? (
-                user.role === 'trainer' ? (
+                user.role === 'admin' ? (
+                  <AdminDashboard />
+                ) : user.role === 'trainer' ? (
                   <TrainerDashboard />
                 ) : (
                   <MemberDashboard />
