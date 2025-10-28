@@ -15,7 +15,12 @@ app.use(cors({
 app.use(express.json())
 
 // 정적 파일 서빙 (프로덕션 빌드된 클라이언트)
-app.use(express.static(process.env.NODE_ENV === 'production' ? './client/dist' : '../client/dist'))
+const clientDistPath = process.env.NODE_ENV === 'production' 
+  ? './client/dist' 
+  : '../client/dist'
+
+console.log('정적 파일 경로:', clientDistPath)
+app.use(express.static(clientDistPath))
 
 // 데이터베이스 초기화 및 관리자 계정 확인
 async function initializeDatabase() {
@@ -1164,7 +1169,6 @@ app.get('*', async (req, res) => {
     
     const __filename = fileURLToPath(import.meta.url)
     const __dirname = path.dirname(__filename)
-    const clientDistPath = process.env.NODE_ENV === 'production' ? './client/dist' : '../client/dist'
     const indexPath = path.join(__dirname, clientDistPath, 'index.html')
     
     console.log('SPA 라우팅 요청:', req.path)
@@ -1174,7 +1178,29 @@ app.get('*', async (req, res) => {
     if (fs.existsSync(indexPath)) {
       res.sendFile('index.html', { root: path.join(__dirname, clientDistPath) })
     } else {
-      res.status(404).json({ error: 'Client build not found. Please check if the build completed successfully.' })
+      // 빌드 파일이 없을 경우 기본 HTML 응답
+      res.status(200).send(`
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>PT Record System</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .error { color: #e74c3c; }
+            .info { color: #3498db; }
+          </style>
+        </head>
+        <body>
+          <h1 class="error">빌드 파일을 찾을 수 없습니다</h1>
+          <p class="info">클라이언트 빌드가 완료되지 않았습니다.</p>
+          <p>경로: ${indexPath}</p>
+          <p>현재 디렉토리: ${__dirname}</p>
+          <p>클라이언트 경로: ${clientDistPath}</p>
+        </body>
+        </html>
+      `)
     }
   } catch (error) {
     console.error('SPA 라우팅 에러:', error)
