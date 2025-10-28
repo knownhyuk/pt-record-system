@@ -1,0 +1,423 @@
+---
+globs: *.yaml,*.json,package*.json,render.yaml
+description: Deployment and environment configuration rules for PT Record System
+---
+
+# 🚀 PT Record System Deployment Rules
+
+## 🌍 Environment Configuration
+
+### Environment Variables
+```bash
+# Development (.env.local)
+NODE_ENV=development
+PORT=3000
+CLIENT_PORT=5173
+
+# Production (Render)
+NODE_ENV=production
+PORT=10000
+PERSISTENT_DISK_PATH=/opt/render/project/persistent
+```
+
+### Environment-Specific Settings
+```javascript
+// server/server.js
+const PORT = process.env.PORT || 3000
+const NODE_ENV = process.env.NODE_ENV || 'development'
+
+// Client build path based on environment
+const clientDistPath = process.env.NODE_ENV === 'production' 
+  ? '../client/dist' 
+  : '../client/dist'
+
+// CORS configuration
+const corsOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://pt-record-system.onrender.com']
+  : ['http://localhost:5173', 'http://localhost:5174']
+```
+
+## 📦 Package.json Scripts
+
+### Root Package Scripts
+```json
+{
+  "scripts": {
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm install && npm run build",
+    "build:server": "cd server && npm install",
+    "build:all": "npm run build && npm run build:server",
+    "start": "cd server && npm install && node server.js",
+    "postinstall": "npm run build"
+  }
+}
+```
+
+### Client Package Scripts
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}
+```
+
+### Server Package Scripts
+```json
+{
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js"
+  }
+}
+```
+
+## 🚀 Render Deployment Configuration
+
+### render.yaml Configuration
+```yaml
+services:
+  - type: web
+    name: pt-record-system
+    env: node
+    buildCommand: npm run build:all
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    disk:
+      name: persistent-disk
+      mountPath: /opt/render/project/persistent
+      sizeGB: 1
+```
+
+### Build Process
+1. **Install Dependencies**: Root, client, and server packages
+2. **Build Client**: Vite builds React app to `client/dist`
+3. **Prepare Server**: Install server dependencies
+4. **Start Server**: Express serves both API and static files
+
+## 🔧 Vite Configuration
+
+### vite.config.ts
+```typescript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          utils: ['date-fns', 'axios']
+        }
+      }
+    }
+  }
+})
+```
+
+## 🎨 TailwindCSS Configuration
+
+### tailwind.config.js
+```javascript
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+        },
+      },
+    },
+  },
+  plugins: [],
+}
+```
+
+## 🗄️ Database Configuration
+
+### Development Database
+```javascript
+// server/database.js (development)
+const DB_FILE = join(__dirname, 'database.json')
+
+// Load and save operations
+export function loadDB() {
+  if (!existsSync(DB_FILE)) {
+    writeFileSync(DB_FILE, JSON.stringify(initialDB, null, 2))
+    return initialDB
+  }
+  const data = readFileSync(DB_FILE, 'utf-8')
+  return JSON.parse(data)
+}
+```
+
+### Production Database (Persistent Disk)
+```javascript
+// server/database-persistent.js (production)
+const PERSISTENT_DIR = process.env.NODE_ENV === 'production'
+  ? '/opt/render/project/persistent'
+  : __dirname
+
+const DB_FILE = join(PERSISTENT_DIR, 'database.json')
+
+// Ensure persistent directory exists
+if (process.env.NODE_ENV === 'production' && !existsSync(PERSISTENT_DIR)) {
+  mkdirSync(PERSISTENT_DIR, { recursive: true })
+}
+```
+
+## 🔒 Security Configuration
+
+### CORS Settings
+```javascript
+// server/server.js
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://pt-record-system.onrender.com']
+    : ['http://localhost:5173', 'http://localhost:5174'],
+  credentials: true
+}))
+```
+
+### Environment Security
+```bash
+# Never commit these files
+.env
+.env.local
+.env.production
+.env.development
+
+# Add to .gitignore
+node_modules/
+.env*
+dist/
+build/
+*.log
+```
+
+## 📊 Monitoring and Logging
+
+### Logging Configuration
+```javascript
+// server/server.js
+const logger = {
+  info: (message, data = {}) => {
+    console.log(`[INFO] ${new Date().toISOString()} - ${message}`, data)
+  },
+  error: (message, error = {}) => {
+    console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, error)
+  },
+  warn: (message, data = {}) => {
+    console.warn(`[WARN] ${new Date().toISOString()} - ${message}`, data)
+  }
+}
+
+// Usage
+logger.info('Server started', { port: PORT, env: NODE_ENV })
+logger.error('Database connection failed', error)
+```
+
+### Health Check Endpoint
+```javascript
+// server/server.js
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV,
+    version: process.env.npm_package_version || '1.0.0'
+  })
+})
+```
+
+## 🚀 Build Optimization
+
+### Client Build Optimization
+```typescript
+// vite.config.ts
+export default defineConfig({
+  build: {
+    // Enable source maps for debugging
+    sourcemap: process.env.NODE_ENV === 'development',
+    
+    // Minify for production
+    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+    
+    // Code splitting
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor libraries
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          utils: ['date-fns', 'axios'],
+          ui: ['tailwindcss']
+        }
+      }
+    },
+    
+    // Asset optimization
+    assetsInlineLimit: 4096,
+    
+    // Chunk size warnings
+    chunkSizeWarningLimit: 1000
+  }
+})
+```
+
+### Server Build Optimization
+```javascript
+// server/server.js
+// Only load production modules in production
+if (process.env.NODE_ENV === 'production') {
+  // Production-specific optimizations
+  app.use(compression())
+  app.use(helmet())
+}
+```
+
+## 🔄 CI/CD Pipeline
+
+### GitHub Actions (Optional)
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Render
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm run install:all
+    
+    - name: Build application
+      run: npm run build:all
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Deploy to Render
+      # Render auto-deploys on git push
+      run: echo "Deployment triggered"
+```
+
+## 🐛 Error Handling
+
+### Global Error Handler
+```javascript
+// server/server.js
+app.use((err, req, res, next) => {
+  logger.error('Unhandled error', {
+    error: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method
+  })
+  
+  res.status(500).json({
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Internal server error' 
+      : err.message
+  })
+})
+```
+
+### Process Error Handling
+```javascript
+// server/server.js
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception', error)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection', { reason, promise })
+  process.exit(1)
+})
+```
+
+## 📈 Performance Monitoring
+
+### Memory Usage Monitoring
+```javascript
+// server/server.js
+setInterval(() => {
+  const memUsage = process.memoryUsage()
+  logger.info('Memory usage', {
+    rss: Math.round(memUsage.rss / 1024 / 1024) + ' MB',
+    heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + ' MB',
+    heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + ' MB'
+  })
+}, 30000) // Every 30 seconds
+```
+
+### Request Timing
+```javascript
+// server/server.js
+app.use((req, res, next) => {
+  const start = Date.now()
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start
+    logger.info('Request completed', {
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration: duration + 'ms'
+    })
+  })
+  
+  next()
+})
+```

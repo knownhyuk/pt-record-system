@@ -1,0 +1,238 @@
+---
+globs: *.tsx,*.ts,*.css,*.js
+description: Styling guidelines and design system for PT Record System
+---
+
+# 🎨 PT Record System Styling Rules
+
+## 🎯 Design System Overview
+
+This project uses **TailwindCSS** with a custom design system featuring modern gradients, glassmorphism effects, and responsive design patterns.
+
+## 🌈 Color Palette
+
+### Primary Colors
+```css
+primary: {
+  50: '#f0f9ff',   /* Very light blue */
+  100: '#e0f2fe',  /* Light blue */
+  200: '#bae6fd',  /* Lighter blue */
+  300: '#7dd3fc',  /* Light blue */
+  400: '#38bdf8',  /* Blue */
+  500: '#0ea5e9',  /* Base blue */
+  600: '#0284c7',  /* Dark blue */
+  700: '#0369a1',  /* Darker blue */
+  800: '#075985',  /* Very dark blue */
+  900: '#0c4a6e',  /* Darkest blue */
+}
+```
+
+### Role-Based Color Themes
+- **Admin Dashboard**: Blue gradient (`from-slate-50 via-blue-50 to-indigo-100`)
+- **Trainer Dashboard**: Green gradient (`from-slate-50 via-green-50 to-emerald-100`)
+- **Member Dashboard**: Purple/Pink gradient (`from-slate-50 via-purple-50 to-pink-100`)
+
+## 🎨 Design Patterns
+
+### 1. Glassmorphism Effects
+```tsx
+// Header with glassmorphism
+<header className="bg-white/80 backdrop-blur-md shadow-xl border-b border-white/20">
+  {/* Content */}
+</header>
+
+// Cards with glassmorphism
+<div className="bg-white/60 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-white/20">
+  {/* Content */}
+</div>
+```
+
+### 2. Gradient Backgrounds
+```tsx
+// Page backgrounds
+<div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+
+// Button gradients
+<button className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl">
+
+// Card gradients
+<div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-xl">
+```
+
+### 3. Hover Animations
+```tsx
+// Scale and shadow effects
+className="hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+
+// Button hover states
+className="hover:from-blue-600 hover:to-indigo-700 transition-all duration-200"
+
+// Scale effects
+className="hover:scale-105 transition-all duration-200"
+```
+
+## 📱 Responsive Design
+
+### Breakpoint Usage
+```tsx
+// Mobile-first approach
+<div className="flex flex-col sm:flex-row gap-4">
+  <div className="w-full sm:w-auto">
+    {/* Content */}
+  </div>
+</div>
+
+// Text sizing
+<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+
+// Spacing
+<div className="p-4 sm:p-6 lg:p-8">
+```
+
+### Layout Patterns
+```tsx
+// Container with max width
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+// Grid layouts
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+// Flex layouts
+<div className="flex items-center justify-between">
+```
+
+## 🎭 Component Styling Patterns
+
+### 1. Tab Navigation
+```tsx
+<nav className="flex space-x-2 bg-white/60 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-white/20">
+  <button className={`
+    px-6 py-3 rounded-xl font-medium text-sm transition-all duration-200
+    ${activeTab === 'overview'
+      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg scale-105'
+      : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+    }
+  `}>
+    📊 개요
+  </button>
+</nav>
+```
+
+### 2. Statistics Cards
+```tsx
+<div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-xl p-6 border border-blue-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-sm font-semibold text-blue-600 mb-1">전체 사용자</p>
+      <p className="text-3xl font-bold text-blue-900">{stats.totalUsers}</p>
+    </div>
+    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+      {/* Icon */}
+    </div>
+  </div>
+</div>
+```
+
+### 3. Form Elements
+```tsx
+<input className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" />
+
+<button className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+  로그인
+</button>
+```
+
+## 🎨 Icon and Visual Elements
+
+### Icon Styling
+```tsx
+// Gradient icon containers
+<div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    {/* SVG content */}
+  </svg>
+</div>
+
+// Status indicators
+<div className="w-2 h-2 bg-green-500 rounded-full"></div>
+```
+
+### Badge Styling
+```tsx
+// Role badges
+<div className="px-4 py-1.5 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-sm font-bold rounded-xl border border-green-200 shadow-sm">
+  💪 PRO
+</div>
+```
+
+## 📐 Spacing and Layout
+
+### Consistent Spacing Scale
+- **xs**: 0.5rem (2px)
+- **sm**: 0.75rem (3px)
+- **base**: 1rem (4px)
+- **lg**: 1.5rem (6px)
+- **xl**: 2rem (8px)
+- **2xl**: 3rem (12px)
+
+### Padding Patterns
+```tsx
+// Cards
+className="p-4 sm:p-6"
+
+// Buttons
+className="px-4 py-2 sm:px-6 sm:py-3"
+
+// Containers
+className="px-4 sm:px-6 lg:px-8"
+```
+
+## 🎭 Animation and Transitions
+
+### Standard Transitions
+```tsx
+// All properties
+className="transition-all duration-200"
+
+// Specific properties
+className="transition-colors duration-300"
+
+// Transform animations
+className="transform hover:-translate-y-1 transition-transform duration-300"
+```
+
+### Loading States
+```tsx
+// Spinner
+<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+
+// Skeleton loading
+<div className="animate-pulse bg-gray-200 rounded-xl h-4 w-3/4"></div>
+```
+
+## 🎨 Dark Mode Considerations
+
+While not currently implemented, the design system is prepared for dark mode:
+
+```tsx
+// Use semantic color classes
+className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+
+// Gradient adjustments for dark mode
+className="bg-gradient-to-br from-slate-50 to-blue-100 dark:from-gray-900 dark:to-blue-900"
+```
+
+## 📱 Mobile-First Approach
+
+Always design for mobile first, then enhance for larger screens:
+
+```tsx
+// Mobile: Stack vertically, Desktop: Side by side
+<div className="flex flex-col sm:flex-row gap-4">
+
+// Mobile: Single column, Desktop: Multiple columns
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+
+// Mobile: Smaller text, Desktop: Larger text
+<h1 className="text-xl sm:text-2xl lg:text-3xl">
+```

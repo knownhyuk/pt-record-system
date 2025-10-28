@@ -1,0 +1,221 @@
+---
+alwaysApply: true
+description: Main overview and quick reference for PT Record System development
+---
+
+# 📋 PT Record System - Cursor Rules Overview
+
+## 🎯 Quick Start Guide
+
+This is a **full-stack PT (Personal Training) record management system** built with React + TypeScript frontend and Node.js + Express backend.
+
+### 🚀 Getting Started
+```bash
+# Install all dependencies
+npm run install:all
+
+# Start development servers
+npm run dev
+
+# Build for production
+npm run build:all
+
+# Start production server
+npm start
+```
+
+### 🌐 Access Points
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:3000/api
+- **Production**: https://pt-record-system.onrender.com
+
+## 📁 Project Structure
+
+```
+pt-record-system/
+├── 🎨 client/              # React + TypeScript frontend
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/         # Page-level components
+│   │   ├── contexts/      # React Context providers
+│   │   ├── types/         # TypeScript definitions
+│   │   └── api/           # API communication
+│   └── package.json
+├── ⚙️ server/              # Node.js + Express backend
+│   ├── server.js          # Main server file
+│   ├── database-*.js      # Database modules
+│   └── package.json
+├── 📄 package.json        # Root project config
+└── 🚀 render.yaml         # Deployment config
+```
+
+## 🎨 Design System
+
+### Color Themes by Role
+- **Admin**: Blue gradient (`from-slate-50 via-blue-50 to-indigo-100`)
+- **Trainer**: Green gradient (`from-slate-50 via-green-50 to-emerald-100`)
+- **Member**: Purple/Pink gradient (`from-slate-50 via-purple-50 to-pink-100`)
+
+### Key Design Patterns
+- **Glassmorphism**: `bg-white/80 backdrop-blur-md`
+- **Gradients**: `bg-gradient-to-r from-blue-500 to-indigo-600`
+- **Hover Effects**: `hover:shadow-2xl transform hover:-translate-y-1`
+- **Responsive**: Mobile-first with `sm:`, `md:`, `lg:` breakpoints
+
+## 🗄️ Database Schema
+
+### Core Entities
+```typescript
+User {
+  id: number
+  name: string
+  email: string
+  role: 'admin' | 'trainer' | 'member'
+  trainerId?: number
+}
+
+PTSession {
+  id: number
+  trainerId: number
+  memberId: number
+  date: string
+  startTime: string
+  trainerConfirmed: boolean
+  memberConfirmed: boolean
+}
+
+InviteCode {
+  id: number
+  code: string
+  trainerId: number
+  expiresAt: string
+  used: boolean
+}
+```
+
+## 🔧 Development Rules
+
+### Code Conventions
+- **TypeScript**: Always use TypeScript for type safety
+- **Naming**: camelCase for variables, PascalCase for components
+- **Components**: Functional components with hooks
+- **Styling**: TailwindCSS utility classes
+- **API**: RESTful endpoints with proper error handling
+
+### File Organization
+- **Components**: `components/ComponentName.tsx`
+- **Pages**: `pages/PageName.tsx`
+- **Types**: `types/index.ts`
+- **API**: `api/index.ts`
+- **Tests**: `ComponentName.test.tsx`
+
+## 🚀 Deployment
+
+### Environment Configuration
+- **Development**: Local JSON database
+- **Production**: Render with Persistent Disk
+- **Database**: JSON file system with PostgreSQL fallback
+
+### Build Process
+1. Install dependencies (`npm run install:all`)
+2. Build client (`npm run build`)
+3. Prepare server (`npm run build:server`)
+4. Start server (`npm start`)
+
+## 🧪 Testing
+
+### Test Structure
+- **Unit Tests**: Individual functions and components
+- **Integration Tests**: API endpoints and database operations
+- **Coverage**: 80% threshold for branches, functions, lines, statements
+
+### Test Commands
+```bash
+npm test                 # Run all tests
+npm run test:watch      # Watch mode
+npm run test:coverage   # Coverage report
+```
+
+## 🔐 Authentication & Authorization
+
+### User Roles
+- **Admin**: Full system access, user management
+- **Trainer**: Session management, member management
+- **Member**: View own sessions, confirm attendance
+
+### Security Features
+- **Password Hashing**: bcrypt with salt rounds
+- **CORS**: Configured for specific origins
+- **Input Validation**: Server-side validation
+- **Error Handling**: Consistent error responses
+
+## 📊 Key Features
+
+### Admin Dashboard
+- User management (view all users)
+- System statistics
+- Recent activity monitoring
+- User role management
+
+### Trainer Dashboard
+- Member management
+- Session scheduling
+- Invite code generation
+- Session confirmation
+
+### Member Dashboard
+- View scheduled sessions
+- Confirm attendance
+- View session history
+- Trainer communication
+
+## 🐛 Common Issues & Solutions
+
+### Development Issues
+1. **Port conflicts**: Kill processes using ports 3000/5173
+2. **Missing dependencies**: Run `npm run install:all`
+3. **Database errors**: Check file permissions and paths
+4. **Build failures**: Clear node_modules and reinstall
+
+### Production Issues
+1. **Deployment failures**: Check render.yaml configuration
+2. **Database persistence**: Verify Persistent Disk mounting
+3. **CORS errors**: Update allowed origins in server.js
+4. **Static file serving**: Check client build output path
+
+## 📚 Additional Resources
+
+### Detailed Rules
+- [Architecture Rules](mdc:architecture.mdc) - System design and structure
+- [Styling Rules](mdc:styling.mdc) - Design system and CSS patterns
+- [Conventions](mdc:conventions.mdc) - Coding standards and best practices
+- [Database Rules](mdc:database.mdc) - Data management and schema
+- [Deployment Rules](mdc:deployment.mdc) - Environment and deployment config
+- [Testing Rules](mdc:testing.mdc) - Testing strategies and patterns
+
+### External Documentation
+- [React Documentation](https://react.dev/)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [TailwindCSS Docs](https://tailwindcss.com/docs)
+- [Express.js Guide](https://expressjs.com/en/guide/routing.html)
+- [Render Documentation](https://render.com/docs)
+
+## 🤝 Contributing
+
+### Code Standards
+1. Follow TypeScript conventions
+2. Use TailwindCSS for styling
+3. Write tests for new features
+4. Update documentation
+5. Follow Git commit conventions
+
+### Pull Request Process
+1. Create feature branch
+2. Implement changes with tests
+3. Update documentation
+4. Submit PR with description
+5. Address review feedback
+
+---
+
+**Happy Coding! 🚀** This system is designed to be maintainable, scalable, and user-friendly. Follow these rules to ensure consistent, high-quality code across the entire project.

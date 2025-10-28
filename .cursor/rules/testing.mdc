@@ -1,0 +1,585 @@
+---
+globs: *.test.ts,*.test.tsx,*.spec.ts,*.spec.tsx
+description: Testing conventions and best practices for PT Record System
+---
+
+# 🧪 PT Record System Testing Rules
+
+## 🎯 Testing Philosophy
+
+### Testing Pyramid
+```
+    🔺 E2E Tests (Few)
+   🔺🔺 Integration Tests (Some)
+  🔺🔺🔺 Unit Tests (Many)
+```
+
+### Testing Strategy
+- **Unit Tests**: Test individual functions and components in isolation
+- **Integration Tests**: Test API endpoints and database operations
+- **E2E Tests**: Test complete user workflows (optional for this project)
+
+## 📁 Test File Organization
+
+### Test File Naming
+```
+src/
+├── components/
+│   ├── Calendar.tsx
+│   └── Calendar.test.tsx
+├── pages/
+│   ├── Login.tsx
+│   └── Login.test.tsx
+├── api/
+│   ├── index.ts
+│   └── index.test.ts
+└── utils/
+    ├── helpers.ts
+    └── helpers.test.ts
+```
+
+### Test File Structure
+```typescript
+// ComponentName.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react'
+import { BrowserRouter } from 'react-router-dom'
+import ComponentName from './ComponentName'
+
+// Mock dependencies
+jest.mock('../api', () => ({
+  fetchData: jest.fn()
+}))
+
+describe('ComponentName', () => {
+  // Test cases
+})
+```
+
+## 🧩 Component Testing
+
+### React Component Testing
+```typescript
+// Calendar.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react'
+import { Calendar } from './Calendar'
+import type { PTSession } from '../types'
+
+const mockSessions: PTSession[] = [
+  {
+    id: 1,
+    trainerId: 1,
+    memberId: 2,
+    date: '2024-01-15',
+    startTime: '09:00',
+    trainerConfirmed: true,
+    memberConfirmed: false,
+    createdAt: '2024-01-01T00:00:00Z'
+  }
+]
+
+describe('Calendar', () => {
+  const mockOnDateClick = jest.fn()
+
+  beforeEach(() => {
+    mockOnDateClick.mockClear()
+  })
+
+  it('renders calendar with current month', () => {
+    render(
+      <Calendar 
+        sessions={mockSessions} 
+        onDateClick={mockOnDateClick} 
+      />
+    )
+    
+    expect(screen.getByText('January 2024')).toBeInTheDocument()
+  })
+
+  it('calls onDateClick when date is clicked', () => {
+    render(
+      <Calendar 
+        sessions={mockSessions} 
+        onDateClick={mockOnDateClick} 
+      />
+    )
+    
+    const dateButton = screen.getByText('15')
+    fireEvent.click(dateButton)
+    
+    expect(mockOnDateClick).toHaveBeenCalledWith(expect.any(Date))
+  })
+
+  it('displays session information on correct dates', () => {
+    render(
+      <Calendar 
+        sessions={mockSessions} 
+        onDateClick={mockOnDateClick} 
+      />
+    )
+    
+    // Check if session info is displayed
+    expect(screen.getByText('09:00')).toBeInTheDocument()
+  })
+})
+```
+
+### Context Testing
+```typescript
+// AuthContext.test.tsx
+import { render, screen } from '@testing-library/react'
+import { AuthContext } from './AuthContext'
+import { useAuth } from './AuthContext'
+
+const TestComponent = () => {
+  const { user, login, logout } = useAuth()
+  return (
+    <div>
+      <span data-testid="user-name">{user?.name || 'No user'}</span>
+      <button onClick={() => login({ id: 1, name: 'Test User', email: 'test@example.com', role: 'member' })}>
+        Login
+      </button>
+      <button onClick={logout}>Logout</button>
+    </div>
+  )
+}
+
+describe('AuthContext', () => {
+  it('provides user state and functions', () => {
+    render(
+      <AuthContext.Provider value={{ user: null, login: jest.fn(), logout: jest.fn() }}>
+        <TestComponent />
+      </AuthContext.Provider>
+    )
+    
+    expect(screen.getByTestId('user-name')).toHaveTextContent('No user')
+  })
+
+  it('handles login and logout', () => {
+    const mockLogin = jest.fn()
+    const mockLogout = jest.fn()
+    
+    render(
+      <AuthContext.Provider value={{ user: null, login: mockLogin, logout: mockLogout }}>
+        <TestComponent />
+      </AuthContext.Provider>
+    )
+    
+    fireEvent.click(screen.getByText('Login'))
+    expect(mockLogin).toHaveBeenCalledWith({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'member'
+    })
+  })
+})
+```
+
+## 🌐 API Testing
+
+### API Function Testing
+```typescript
+// api/index.test.ts
+import axios from 'axios'
+import { fetchUsers, createUser, login } from './index'
+
+// Mock axios
+jest.mock('axios')
+const mockedAxios = axios as jest.Mocked<typeof axios>
+
+describe('API Functions', () => {
+  beforeEach(() => {
+    mockedAxios.get.mockClear()
+    mockedAxios.post.mockClear()
+  })
+
+  describe('fetchUsers', () => {
+    it('fetches users successfully', async () => {
+      const mockUsers = [
+        { id: 1, name: 'John Doe', email: 'john@example.com', role: 'member' }
+      ]
+      
+      mockedAxios.get.mockResolvedValue({ data: mockUsers })
+      
+      const result = await fetchUsers()
+      
+      expect(mockedAxios.get).toHaveBeenCalledWith('/users')
+      expect(result).toEqual(mockUsers)
+    })
+
+    it('handles fetch error', async () => {
+      const errorMessage = 'Network Error'
+      mockedAxios.get.mockRejectedValue(new Error(errorMessage))
+      
+      await expect(fetchUsers()).rejects.toThrow(errorMessage)
+    })
+  })
+
+  describe('login', () => {
+    it('logs in successfully', async () => {
+      const loginData = { email: 'test@example.com', password: 'password123' }
+      const mockResponse = { 
+        id: 1, 
+        name: 'Test User', 
+        email: 'test@example.com', 
+        role: 'member' 
+      }
+      
+      mockedAxios.post.mockResolvedValue({ data: mockResponse })
+      
+      const result = await login(loginData)
+      
+      expect(mockedAxios.post).toHaveBeenCalledWith('/auth/login', loginData)
+      expect(result).toEqual(mockResponse)
+    })
+  })
+})
+```
+
+### Database Testing
+```typescript
+// database.test.js
+import { userDB, ptSessionDB, loadDB, saveDB } from './database-persistent'
+
+// Mock file system
+jest.mock('fs', () => ({
+  readFileSync: jest.fn(),
+  writeFileSync: jest.fn(),
+  existsSync: jest.fn(() => true)
+}))
+
+describe('Database Operations', () => {
+  beforeEach(() => {
+    // Reset mocks
+    jest.clearAllMocks()
+  })
+
+  describe('userDB', () => {
+    it('creates a new user', () => {
+      const userData = {
+        name: 'Test User',
+        email: 'test@example.com',
+        password: 'hashedpassword',
+        role: 'member'
+      }
+      
+      const user = userDB.create(userData)
+      
+      expect(user).toMatchObject({
+        id: expect.any(Number),
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        created_at: expect.any(String)
+      })
+    })
+
+    it('finds user by email', () => {
+      const userData = {
+        name: 'Test User',
+        email: 'test@example.com',
+        password: 'hashedpassword',
+        role: 'member'
+      }
+      
+      userDB.create(userData)
+      const foundUser = userDB.findByEmail('test@example.com')
+      
+      expect(foundUser).toMatchObject(userData)
+    })
+  })
+
+  describe('ptSessionDB', () => {
+    it('creates a new session', () => {
+      const sessionData = {
+        trainer_id: 1,
+        member_id: 2,
+        date: '2024-01-15',
+        start_time: '09:00',
+        trainer_confirmed: true,
+        member_confirmed: false
+      }
+      
+      const session = ptSessionDB.create(sessionData)
+      
+      expect(session).toMatchObject({
+        id: expect.any(Number),
+        ...sessionData,
+        created_at: expect.any(String)
+      })
+    })
+  })
+})
+```
+
+## 🎭 Mocking Strategies
+
+### Mock External Dependencies
+```typescript
+// Mock React Router
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => jest.fn(),
+  useLocation: () => ({ pathname: '/test' })
+}))
+
+// Mock date-fns
+jest.mock('date-fns', () => ({
+  format: jest.fn((date, format) => '2024-01-15'),
+  startOfMonth: jest.fn((date) => new Date('2024-01-01')),
+  endOfMonth: jest.fn((date) => new Date('2024-01-31'))
+}))
+
+// Mock localStorage
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn()
+}
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock
+})
+```
+
+### Mock API Responses
+```typescript
+// Mock successful API response
+const mockApiResponse = {
+  data: { id: 1, name: 'Test User' },
+  status: 200,
+  statusText: 'OK'
+}
+
+mockedAxios.get.mockResolvedValue(mockApiResponse)
+
+// Mock error response
+const mockApiError = {
+  response: {
+    data: { error: 'User not found' },
+    status: 404,
+    statusText: 'Not Found'
+  }
+}
+
+mockedAxios.get.mockRejectedValue(mockApiError)
+```
+
+## 🔧 Test Utilities
+
+### Custom Render Function
+```typescript
+// test-utils.tsx
+import { render, RenderOptions } from '@testing-library/react'
+import { BrowserRouter } from 'react-router-dom'
+import { AuthContext } from '../contexts/AuthContext'
+import type { User } from '../types'
+
+interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
+  user?: User | null
+  login?: (user: User) => void
+  logout?: () => void
+}
+
+const AllTheProviders = ({ 
+  children, 
+  user = null, 
+  login = jest.fn(), 
+  logout = jest.fn() 
+}: { 
+  children: React.ReactNode
+  user?: User | null
+  login?: (user: User) => void
+  logout?: () => void
+}) => {
+  return (
+    <BrowserRouter>
+      <AuthContext.Provider value={{ user, login, logout }}>
+        {children}
+      </AuthContext.Provider>
+    </BrowserRouter>
+  )
+}
+
+const customRender = (
+  ui: React.ReactElement,
+  options: CustomRenderOptions = {}
+) => {
+  const { user, login, logout, ...renderOptions } = options
+  
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <AllTheProviders user={user} login={login} logout={logout}>
+        {children}
+      </AllTheProviders>
+    ),
+    ...renderOptions
+  })
+}
+
+export * from '@testing-library/react'
+export { customRender as render }
+```
+
+### Test Data Factories
+```typescript
+// test-factories.ts
+import type { User, PTSession, InviteCode } from '../types'
+
+export const createMockUser = (overrides: Partial<User> = {}): User => ({
+  id: 1,
+  name: 'Test User',
+  email: 'test@example.com',
+  role: 'member',
+  ...overrides
+})
+
+export const createMockSession = (overrides: Partial<PTSession> = {}): PTSession => ({
+  id: 1,
+  trainerId: 1,
+  memberId: 2,
+  date: '2024-01-15',
+  startTime: '09:00',
+  trainerConfirmed: true,
+  memberConfirmed: false,
+  createdAt: '2024-01-01T00:00:00Z',
+  ...overrides
+})
+
+export const createMockInviteCode = (overrides: Partial<InviteCode> = {}): InviteCode => ({
+  id: 1,
+  code: 'ABC123',
+  trainerId: 1,
+  expiresAt: '2024-02-01T00:00:00Z',
+  used: false,
+  createdAt: '2024-01-01T00:00:00Z',
+  ...overrides
+})
+```
+
+## 📊 Test Coverage
+
+### Coverage Configuration
+```json
+// package.json
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/**/*.stories.{ts,tsx}",
+      "!src/test-utils/**/*"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  }
+}
+```
+
+### Coverage Reports
+```typescript
+// Generate coverage report
+npm run test:coverage
+
+// Coverage thresholds
+// - Branches: 80%
+// - Functions: 80%
+// - Lines: 80%
+// - Statements: 80%
+```
+
+## 🚀 Test Automation
+
+### Pre-commit Hooks
+```json
+// package.json
+{
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run test:ci && npm run lint"
+    }
+  }
+}
+```
+
+### CI/CD Integration
+```yaml
+# .github/workflows/test.yml
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm run install:all
+    
+    - name: Run tests
+      run: npm run test:ci
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v1
+```
+
+## 🐛 Debugging Tests
+
+### Debug Test Commands
+```bash
+# Run specific test file
+npm test Calendar.test.tsx
+
+# Run tests matching pattern
+npm test -- --testNamePattern="renders calendar"
+
+# Run tests in watch mode
+npm run test:watch
+
+# Debug tests
+node --inspect-brk node_modules/.bin/jest --runInBand
+```
+
+### Common Test Issues
+```typescript
+// Issue: Component not rendering
+// Solution: Check if component needs providers
+render(
+  <AuthContext.Provider value={mockContext}>
+    <Component />
+  </AuthContext.Provider>
+)
+
+// Issue: Async operations not completing
+// Solution: Use waitFor or findBy queries
+await waitFor(() => {
+  expect(screen.getByText('Loading complete')).toBeInTheDocument()
+})
+
+// Issue: Mock not working
+// Solution: Clear mocks between tests
+beforeEach(() => {
+  jest.clearAllMocks()
+})
+```

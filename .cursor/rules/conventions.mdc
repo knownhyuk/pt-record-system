@@ -1,0 +1,469 @@
+---
+globs: *.ts,*.tsx,*.js,*.jsx
+description: Coding conventions and best practices for PT Record System
+---
+
+# 📝 PT Record System Coding Conventions
+
+## 🎯 General Principles
+
+### Code Quality Standards
+- **TypeScript First**: Always use TypeScript for type safety
+- **ES Modules**: Use `import/export` syntax consistently
+- **Functional Components**: Prefer function components over class components
+- **Hooks**: Use React hooks for state management and side effects
+- **Immutable Updates**: Never mutate state directly, always create new objects
+
+## 📁 File and Directory Naming
+
+### File Naming Conventions
+```
+✅ Good Examples:
+- AdminDashboard.tsx
+- AuthContext.tsx
+- database-persistent.js
+- vite.config.ts
+
+❌ Bad Examples:
+- adminDashboard.tsx
+- auth-context.tsx
+- database_persistent.js
+- viteConfig.ts
+```
+
+### Directory Structure
+```
+src/
+├── components/     # Reusable UI components
+├── pages/         # Page-level components
+├── contexts/      # React Context providers
+├── types/         # TypeScript type definitions
+├── api/           # API communication functions
+└── utils/         # Utility functions
+```
+
+## 🔤 Variable and Function Naming
+
+### Naming Conventions
+```typescript
+// Variables: camelCase
+const userName = 'John Doe'
+const isLoggedIn = true
+const sessionData = { ... }
+
+// Functions: camelCase with descriptive verbs
+const handleLogin = () => { ... }
+const fetchUserData = async () => { ... }
+const validateEmail = (email: string) => { ... }
+
+// Constants: UPPER_SNAKE_CASE
+const API_BASE_URL = 'http://localhost:3000/api'
+const MAX_RETRY_ATTEMPTS = 3
+
+// Types/Interfaces: PascalCase
+interface User {
+  id: number
+  name: string
+  email: string
+}
+
+// React Components: PascalCase
+const AdminDashboard = () => { ... }
+const Calendar = ({ sessions, onDateClick }: CalendarProps) => { ... }
+```
+
+### Boolean Naming
+```typescript
+// Use descriptive boolean names
+const isActive = true
+const hasPermission = false
+const canEdit = true
+const shouldShow = false
+
+// Avoid generic names
+❌ const flag = true
+❌ const status = false
+```
+
+## 🎨 React Component Conventions
+
+### Component Structure
+```typescript
+// 1. Imports (external libraries first, then internal)
+import React, { useState, useEffect } from 'react'
+import { format } from 'date-fns'
+import type { User } from '../types'
+import { useAuth } from '../contexts/AuthContext'
+
+// 2. Type definitions
+interface ComponentProps {
+  userId: number
+  onUpdate?: (user: User) => void
+}
+
+// 3. Component definition
+const ComponentName = ({ userId, onUpdate }: ComponentProps) => {
+  // 4. State declarations
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<User[]>([])
+  
+  // 5. Hooks (useEffect, custom hooks)
+  useEffect(() => {
+    // Effect logic
+  }, [userId])
+  
+  // 6. Event handlers
+  const handleClick = () => {
+    // Handler logic
+  }
+  
+  // 7. Render
+  return (
+    <div>
+      {/* JSX content */}
+    </div>
+  )
+}
+
+// 8. Export
+export default ComponentName
+```
+
+### Props and State Management
+```typescript
+// Always define prop types
+interface UserCardProps {
+  user: User
+  onEdit: (user: User) => void
+  onDelete: (userId: number) => void
+  showActions?: boolean
+}
+
+// Use optional props with defaults
+const UserCard = ({ 
+  user, 
+  onEdit, 
+  onDelete, 
+  showActions = true 
+}: UserCardProps) => {
+  // Component logic
+}
+
+// State updates with proper typing
+const [users, setUsers] = useState<User[]>([])
+const [loading, setLoading] = useState<boolean>(false)
+
+// Update state immutably
+setUsers(prevUsers => [...prevUsers, newUser])
+setUsers(prevUsers => 
+  prevUsers.map(user => 
+    user.id === updatedUser.id ? updatedUser : user
+  )
+)
+```
+
+## 🔧 TypeScript Conventions
+
+### Type Definitions
+```typescript
+// Use interfaces for object shapes
+interface User {
+  id: number
+  name: string
+  email: string
+  role: 'admin' | 'trainer' | 'member'
+  trainerId?: number
+}
+
+// Use type aliases for unions and primitives
+type UserRole = 'admin' | 'trainer' | 'member'
+type ApiResponse<T> = {
+  data: T
+  success: boolean
+  message?: string
+}
+
+// Use enums for constants
+enum SessionStatus {
+  PENDING = 'pending',
+  CONFIRMED = 'confirmed',
+  CANCELLED = 'cancelled'
+}
+```
+
+### Function Typing
+```typescript
+// Always type function parameters and return values
+const createUser = async (userData: Omit<User, 'id'>): Promise<User> => {
+  // Implementation
+}
+
+// Use generic types for reusable functions
+const fetchData = async <T>(url: string): Promise<T> => {
+  const response = await fetch(url)
+  return response.json()
+}
+
+// Event handler typing
+const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault()
+  // Handler logic
+}
+```
+
+## 🌐 API and Data Fetching
+
+### API Function Conventions
+```typescript
+// Use descriptive function names
+const fetchUserById = async (id: number): Promise<User> => {
+  const response = await api.get(`/users/${id}`)
+  return response.data
+}
+
+const createSession = async (sessionData: CreateSessionData): Promise<PTSession> => {
+  const response = await api.post('/pt-sessions', sessionData)
+  return response.data
+}
+
+// Error handling
+const fetchUsers = async (): Promise<User[]> => {
+  try {
+    const response = await api.get('/users')
+    return response.data
+  } catch (error) {
+    console.error('Failed to fetch users:', error)
+    throw new Error('사용자 목록을 불러오는데 실패했습니다.')
+  }
+}
+```
+
+### Async/Await Usage
+```typescript
+// Prefer async/await over .then()
+const loadData = async () => {
+  try {
+    setLoading(true)
+    const users = await fetchUsers()
+    const sessions = await fetchSessions()
+    setUsers(users)
+    setSessions(sessions)
+  } catch (error) {
+    console.error('Error loading data:', error)
+  } finally {
+    setLoading(false)
+  }
+}
+
+// Use Promise.all for parallel requests
+const loadDashboardData = async () => {
+  try {
+    const [users, sessions, comments] = await Promise.all([
+      fetchUsers(),
+      fetchSessions(),
+      fetchComments()
+    ])
+    // Process data
+  } catch (error) {
+    // Handle error
+  }
+}
+```
+
+## 🎨 CSS and Styling Conventions
+
+### TailwindCSS Class Organization
+```tsx
+// Group related classes together
+<button className={`
+  // Layout
+  flex items-center justify-center
+  
+  // Sizing
+  w-full px-6 py-3
+  
+  // Colors
+  bg-gradient-to-r from-blue-500 to-indigo-600 text-white
+  
+  // Effects
+  rounded-xl shadow-lg hover:shadow-xl
+  
+  // Transitions
+  transition-all duration-200 transform hover:-translate-y-1
+  
+  // States
+  ${isActive ? 'scale-105' : 'hover:scale-105'}
+`}>
+  Button Text
+</button>
+```
+
+### Conditional Styling
+```tsx
+// Use template literals for complex conditions
+const buttonClasses = `
+  px-4 py-2 rounded-lg font-medium transition-all duration-200
+  ${variant === 'primary' 
+    ? 'bg-blue-500 text-white hover:bg-blue-600' 
+    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+  }
+  ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+`
+
+// Use clsx or similar for complex conditions
+import clsx from 'clsx'
+
+const buttonClasses = clsx(
+  'px-4 py-2 rounded-lg font-medium transition-all duration-200',
+  {
+    'bg-blue-500 text-white hover:bg-blue-600': variant === 'primary',
+    'bg-gray-200 text-gray-700 hover:bg-gray-300': variant === 'secondary',
+    'opacity-50 cursor-not-allowed': isDisabled,
+    'cursor-pointer': !isDisabled
+  }
+)
+```
+
+## 🐛 Error Handling
+
+### Error Handling Patterns
+```typescript
+// API errors
+const handleApiError = (error: any) => {
+  if (error.response) {
+    // Server responded with error status
+    console.error('API Error:', error.response.data)
+    return error.response.data.message || '서버 오류가 발생했습니다.'
+  } else if (error.request) {
+    // Request was made but no response
+    console.error('Network Error:', error.request)
+    return '네트워크 오류가 발생했습니다.'
+  } else {
+    // Something else happened
+    console.error('Error:', error.message)
+    return '알 수 없는 오류가 발생했습니다.'
+  }
+}
+
+// Component error boundaries
+const ErrorBoundary = ({ children }: { children: React.ReactNode }) => {
+  const [hasError, setHasError] = useState(false)
+  
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('Component Error:', error)
+      setHasError(true)
+    }
+    
+    window.addEventListener('error', handleError)
+    return () => window.removeEventListener('error', handleError)
+  }, [])
+  
+  if (hasError) {
+    return <div>오류가 발생했습니다. 페이지를 새로고침해주세요.</div>
+  }
+  
+  return <>{children}</>
+}
+```
+
+## 📝 Comments and Documentation
+
+### Comment Standards
+```typescript
+// Use JSDoc for function documentation
+/**
+ * Creates a new PT session for a trainer and member
+ * @param sessionData - The session data including trainer and member IDs
+ * @returns Promise that resolves to the created session
+ * @throws {Error} When session creation fails
+ */
+const createSession = async (sessionData: CreateSessionData): Promise<PTSession> => {
+  // Implementation
+}
+
+// Use inline comments for complex logic
+const calculateSessionStats = (sessions: PTSession[]) => {
+  // Group sessions by month for statistics
+  const monthlySessions = sessions.reduce((acc, session) => {
+    const month = format(new Date(session.date), 'yyyy-MM')
+    acc[month] = (acc[month] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  
+  return monthlySessions
+}
+
+// Use TODO comments for future improvements
+// TODO: Implement pagination for large user lists
+// TODO: Add caching for frequently accessed data
+```
+
+## 🔄 State Management
+
+### State Update Patterns
+```typescript
+// Use functional updates for state that depends on previous state
+setUsers(prevUsers => {
+  const updatedUsers = prevUsers.map(user => 
+    user.id === updatedUser.id ? updatedUser : user
+  )
+  return updatedUsers
+})
+
+// Use useCallback for event handlers passed to child components
+const handleUserUpdate = useCallback((updatedUser: User) => {
+  setUsers(prevUsers => 
+    prevUsers.map(user => 
+      user.id === updatedUser.id ? updatedUser : user
+    )
+  )
+}, [])
+
+// Use useMemo for expensive calculations
+const filteredUsers = useMemo(() => {
+  return users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+}, [users, searchTerm])
+```
+
+## 🧪 Testing Conventions
+
+### Test File Naming
+```
+ComponentName.test.tsx
+ComponentName.test.ts
+api.test.ts
+utils.test.ts
+```
+
+### Test Structure
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react'
+import { UserCard } from './UserCard'
+
+describe('UserCard', () => {
+  const mockUser = {
+    id: 1,
+    name: 'John Doe',
+    email: 'john@example.com',
+    role: 'member' as const
+  }
+
+  it('renders user information correctly', () => {
+    render(<UserCard user={mockUser} onEdit={jest.fn()} onDelete={jest.fn()} />)
+    
+    expect(screen.getByText('John Doe')).toBeInTheDocument()
+    expect(screen.getByText('john@example.com')).toBeInTheDocument()
+  })
+
+  it('calls onEdit when edit button is clicked', () => {
+    const mockOnEdit = jest.fn()
+    render(<UserCard user={mockUser} onEdit={mockOnEdit} onDelete={jest.fn()} />)
+    
+    fireEvent.click(screen.getByText('수정'))
+    expect(mockOnEdit).toHaveBeenCalledWith(mockUser)
+  })
+})
+```

@@ -1,0 +1,91 @@
+---
+alwaysApply: true
+---
+# 🏗️ PT Record System Architecture Rules
+
+## 📁 Project Structure
+This is a **full-stack web application** with clear separation between frontend and backend:
+
+```
+pt-record-system/
+├── 🎨 client/          # React + TypeScript frontend
+├── ⚙️ server/          # Node.js + Express backend  
+├── 📄 package.json     # Root project configuration
+└── 🚀 render.yaml      # Render deployment configuration
+```
+
+## 🎯 Technology Stack
+
+### Frontend (Client)
+- **Framework**: React 18.2.0 with TypeScript 5.3.3
+- **Bundler**: Vite 5.0.8 for fast development and building
+- **Styling**: TailwindCSS 3.3.6 with custom color palette
+- **Routing**: React Router DOM 6.20.0 for SPA navigation
+- **HTTP**: Axios 1.6.2 for API communication
+- **Date**: date-fns 2.30.0 for date manipulation
+
+### Backend (Server)
+- **Runtime**: Node.js with ES Modules
+- **Framework**: Express 4.18.2 for REST API
+- **Security**: bcryptjs 2.4.3 for password hashing
+- **Database**: JSON File System + PostgreSQL 8.16.3 (fallback)
+- **CORS**: cors 2.8.5 for cross-origin requests
+- **ID Generation**: nanoid 5.0.4 for unique identifiers
+
+## 🔄 Data Flow Architecture
+
+### Client-Server Communication
+- **API Base URL**: `http://localhost:3000/api` (dev), `https://pt-record-system.onrender.com/api` (prod)
+- **Proxy Configuration**: Vite dev server proxies `/api/*` to backend
+- **Authentication**: JWT-like token stored in localStorage
+- **State Management**: React Context API for global state
+
+### Database Architecture
+- **Primary**: JSON file-based database ([database-persistent.js](mdc:server/database-persistent.js))
+- **Fallback**: PostgreSQL for production scaling
+- **Storage**: Render Persistent Disk for data persistence
+- **Schema**: Users, InviteCodes, PTSessions, Comments with relational structure
+
+## 🚀 Deployment Architecture
+
+### Development
+- **Concurrent Execution**: `concurrently` runs client and server simultaneously
+- **Hot Reload**: Vite HMR for frontend, Node.js `--watch` for backend
+- **Ports**: Client (5173), Server (3000)
+
+### Production (Render)
+- **Build Process**: `npm run build:all` builds both client and server
+- **Static Serving**: Express serves built client files
+- **Environment**: NODE_ENV=production, PORT=10000
+- **Persistence**: Persistent Disk mounted at `/opt/render/project/persistent`
+
+## 📋 Component Architecture
+
+### Frontend Components
+- **Pages**: [Login.tsx](mdc:client/src/pages/Login.tsx), [AdminDashboard.tsx](mdc:client/src/pages/AdminDashboard.tsx), etc.
+- **Components**: [Calendar.tsx](mdc:client/src/components/Calendar.tsx), [CommentSection.tsx](mdc:client/src/components/CommentSection.tsx)
+- **Context**: [AuthContext.tsx](mdc:client/src/contexts/AuthContext.tsx) for authentication state
+- **Types**: [types/index.ts](mdc:client/src/types/index.ts) for TypeScript interfaces
+
+### Backend Structure
+- **Main Server**: [server.js](mdc:server/server.js) with Express routes
+- **Database Modules**: [database-persistent.js](mdc:server/database-persistent.js), [database-pg.js](mdc:server/database-pg.js)
+- **API Endpoints**: RESTful design with `/api/auth/*`, `/api/trainer/*`, `/api/member/*`, `/api/admin/*`
+
+## 🔐 Security Architecture
+
+### Authentication Flow
+1. User submits credentials to `/api/auth/login`
+2. Server validates with bcrypt password comparison
+3. Client stores user data in localStorage
+4. Subsequent requests include user context
+
+### Authorization
+- **Role-based Access**: admin, trainer, member roles
+- **Route Protection**: React Router guards based on authentication state
+- **API Protection**: Server-side role validation for sensitive endpoints
+
+### Data Validation
+- **Input Sanitization**: Express middleware for request validation
+- **Type Safety**: TypeScript interfaces for all data structures
+- **Error Handling**: Consistent error responses across all endpoints

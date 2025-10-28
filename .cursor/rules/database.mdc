@@ -1,0 +1,402 @@
+---
+globs: server/*.js,database*.js
+description: Database design and data management conventions for PT Record System
+---
+
+# 🗄️ PT Record System Database Rules
+
+## 📊 Database Architecture
+
+### Primary Database: JSON File System
+- **File**: [database-persistent.js](mdc:server/database-persistent.js)
+- **Storage**: Render Persistent Disk (`/opt/render/project/persistent/database.json`)
+- **Fallback**: PostgreSQL ([database-pg.js](mdc:server/database-pg.js)) for scaling
+
+### Database Schema Structure
+```javascript
+const initialDB = {
+  users: [],           // User accounts (admin, trainer, member)
+  invite_codes: [],    // Trainer invitation codes
+  pt_sessions: [],     // PT session records
+  comments: [],        // Session comments
+  counters: {          // Auto-incrementing ID counters
+    users: 0,
+    invite_codes: 0,
+    pt_sessions: 0,
+    comments: 0
+  }
+}
+```
+
+## 👥 User Entity Design
+
+### User Schema
+```typescript
+interface User {
+  id: number              // Primary key (auto-increment)
+  name: string           // User's display name
+  email: string          // Unique email address
+  password: string       // Hashed password (bcrypt)
+  role: 'admin' | 'trainer' | 'member'  // User role
+  trainer_id?: number    // For members: assigned trainer ID
+  created_at: string     // ISO timestamp
+}
+```
+
+### User Management Rules
+- **Admin Account**: Always has ID 1, created automatically if not exists
+- **Email Uniqueness**: Enforced at application level
+- **Password Security**: Always hashed with bcrypt (salt rounds: 10)
+- **Role Hierarchy**: admin > trainer > member
+
+## 🎫 Invite Code System
+
+### Invite Code Schema
+```typescript
+interface InviteCode {
+  id: number              // Primary key
+  code: string           // Unique invitation code (nanoid)
+  trainer_id: number     // Creator trainer ID
+  expires_at: string     // Expiration timestamp
+  used: boolean          // Usage status
+  created_at: string     // Creation timestamp
+}
+```
+
+### Invite Code Rules
+- **Generation**: Use `nanoid()` for unique codes
+- **Expiration**: Default 7 days from creation
+- **Single Use**: Each code can only be used once
+- **Trainer Association**: Codes are tied to specific trainers
+
+## 📅 PT Session Management
+
+### PT Session Schema
+```typescript
+interface PTSession {
+  id: number                    // Primary key
+  trainer_id: number           // Trainer who created the session
+  member_id: number            // Member assigned to session
+  date: string                 // Session date (YYYY-MM-DD)
+  start_time: string           // Session time (HH:mm)
+  trainer_confirmed: boolean   // Trainer confirmation status
+  member_confirmed: boolean    // Member confirmation status
+  confirmed_at?: string        // Mutual confirmation timestamp
+  created_at: string           // Session creation timestamp
+  member_name?: string         // Denormalized member name (for joins)
+  trainer_name?: string        // Denormalized trainer name (for joins)
+}
+```
+
+### Session Business Rules
+- **Time Conflict Prevention**: No overlapping sessions for same trainer
+- **Dual Confirmation**: Both trainer and member must confirm
+- **Automatic Trainer Confirmation**: When trainer creates session
+- **Member Confirmation Required**: Member must explicitly confirm attendance
+
+## 💬 Comment System
+
+### Comment Schema
+```typescript
+interface Comment {
+  id: number              // Primary key
+  session_id: number      // Associated PT session
+  trainer_id: number      // Comment author (always trainer)
+  content: string         // Comment text
+  is_public: boolean      // Visibility: true=member visible, false=trainer only
+  created_at: string      // Creation timestamp
+  updated_at?: string     // Last modification timestamp
+}
+```
+
+### Comment Rules
+- **Trainer Only**: Only trainers can create comments
+- **Session Association**: Comments must be linked to a PT session
+- **Visibility Control**: `is_public` determines member visibility
+- **Edit Tracking**: Track modification timestamps
+
+## 🔧 Database Operations
+
+### CRUD Operations Pattern
+```javascript
+// Create operation
+const create = (data) => {
+  const id = ++db.counters[tableName]
+  const record = {
+    id,
+    ...data,
+    created_at: new Date().toISOString()
+  }
+  db[tableName].push(record)
+  saveDB(db)
+  return record
+}
+
+// Read operations
+const findById = (id) => db[tableName].find(record => record.id === id)
+const findByEmail = (email) => db[tableName].find(record => record.email === email)
+const findAll = () => db[tableName]
+
+// Update operation
+const update = (id, data) => {
+  const index = db[tableName].findIndex(record => record.id === id)
+  if (index !== -1) {
+    db[tableName][index] = { ...db[tableName][index], ...data }
+    saveDB(db)
+    return db[tableName][index]
+  }
+  return null
+}
+
+// Delete operation
+const remove = (id) => {
+  const index = db[tableName].findIndex(record => record.id === id)
+  if (index !== -1) {
+    const deleted = db[tableName].splice(index, 1)[0]
+    saveDB(db)
+    return deleted
+  }
+  return null
+}
+```
+
+### Data Validation Rules
+```javascript
+// User validation
+const validateUser = (userData) => {
+  if (!userData.name || !userData.email || !userData.password) {
+    throw new Error('Name, email, and password are required')
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
+    throw new Error('Invalid email format')
+  }
+  if (userData.password.length < 6) {
+    throw new Error('Password must be at least 6 characters')
+  }
+}
+
+// Session validation
+const validateSession = (sessionData) => {
+  if (!sessionData.trainer_id || !sessionData.member_id || !sessionData.date) {
+    throw new Error('Trainer ID, member ID, and date are required')
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionData.date)) {
+    throw new Error('Date must be in YYYY-MM-DD format')
+  }
+  if (!/^\d{2}:\d{2}$/.test(sessionData.start_time)) {
+    throw new Error('Time must be in HH:mm format')
+  }
+}
+```
+
+## 🔄 Data Relationships
+
+### Entity Relationships
+```
+User (1) ←→ (N) InviteCode
+User (1) ←→ (N) PTSession (as trainer)
+User (1) ←→ (N) PTSession (as member)
+PTSession (1) ←→ (N) Comment
+User (1) ←→ (N) Comment (as trainer)
+```
+
+### Join Operations
+```javascript
+// Get sessions with member names
+const getSessionsWithMemberNames = (trainerId) => {
+  return ptSessionDB.findByTrainerId(trainerId).map(session => {
+    const member = userDB.findById(session.member_id)
+    return {
+      ...session,
+      member_name: member?.name || 'Unknown'
+    }
+  })
+}
+
+// Get sessions with trainer names
+const getSessionsWithTrainerNames = (memberId) => {
+  return ptSessionDB.findByMemberId(memberId).map(session => {
+    const trainer = userDB.findById(session.trainer_id)
+    return {
+      ...session,
+      trainer_name: trainer?.name || 'Unknown'
+    }
+  })
+}
+```
+
+## 🚀 Performance Optimization
+
+### Database Indexing Strategy
+```javascript
+// Create indexes for frequently queried fields
+const createIndexes = (db) => {
+  // User indexes
+  db.userIndex = {
+    byEmail: new Map(db.users.map(user => [user.email, user])),
+    byRole: db.users.reduce((acc, user) => {
+      if (!acc[user.role]) acc[user.role] = []
+      acc[user.role].push(user)
+      return acc
+    }, {})
+  }
+  
+  // Session indexes
+  db.sessionIndex = {
+    byTrainer: new Map(),
+    byMember: new Map(),
+    byDate: new Map()
+  }
+  
+  db.pt_sessions.forEach(session => {
+    // Index by trainer
+    if (!db.sessionIndex.byTrainer.has(session.trainer_id)) {
+      db.sessionIndex.byTrainer.set(session.trainer_id, [])
+    }
+    db.sessionIndex.byTrainer.get(session.trainer_id).push(session)
+    
+    // Index by member
+    if (!db.sessionIndex.byMember.has(session.member_id)) {
+      db.sessionIndex.byMember.set(session.member_id, [])
+    }
+    db.sessionIndex.byMember.get(session.member_id).push(session)
+    
+    // Index by date
+    if (!db.sessionIndex.byDate.has(session.date)) {
+      db.sessionIndex.byDate.set(session.date, [])
+    }
+    db.sessionIndex.byDate.get(session.date).push(session)
+  })
+}
+```
+
+### Data Pagination
+```javascript
+// Implement pagination for large datasets
+const getPaginatedUsers = (page = 1, limit = 10) => {
+  const startIndex = (page - 1) * limit
+  const endIndex = startIndex + limit
+  const users = db.users.slice(startIndex, endIndex)
+  const total = db.users.length
+  const totalPages = Math.ceil(total / limit)
+  
+  return {
+    data: users,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1
+    }
+  }
+}
+```
+
+## 🔒 Data Security
+
+### Password Security
+```javascript
+// Always hash passwords before storing
+const hashPassword = async (password) => {
+  const saltRounds = 10
+  return await bcrypt.hash(password, saltRounds)
+}
+
+// Verify passwords on login
+const verifyPassword = async (password, hashedPassword) => {
+  return await bcrypt.compare(password, hashedPassword)
+}
+```
+
+### Data Sanitization
+```javascript
+// Sanitize user input
+const sanitizeUserInput = (input) => {
+  return {
+    name: input.name?.trim() || '',
+    email: input.email?.trim().toLowerCase() || '',
+    // Remove any potentially dangerous characters
+    content: input.content?.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') || ''
+  }
+}
+```
+
+## 📊 Data Migration
+
+### Schema Migration Pattern
+```javascript
+// Handle database schema updates
+const migrateDatabase = (currentVersion, targetVersion) => {
+  const migrations = {
+    '1.0.0': () => {
+      // Initial schema
+      return initialDB
+    },
+    '1.1.0': (db) => {
+      // Add new fields
+      db.users = db.users.map(user => ({
+        ...user,
+        last_login: null,
+        is_active: true
+      }))
+      return db
+    },
+    '1.2.0': (db) => {
+      // Add new table
+      if (!db.user_sessions) {
+        db.user_sessions = []
+        db.counters.user_sessions = 0
+      }
+      return db
+    }
+  }
+  
+  // Apply migrations sequentially
+  let db = loadDB()
+  for (let version = currentVersion; version < targetVersion; version++) {
+    const migration = migrations[version]
+    if (migration) {
+      db = migration(db)
+    }
+  }
+  
+  saveDB(db)
+  return db
+}
+```
+
+## 🧪 Database Testing
+
+### Test Data Setup
+```javascript
+// Create test data for development
+const createTestData = () => {
+  const testUsers = [
+    {
+      id: 1,
+      name: '관리자',
+      email: 'admin@pt-record.com',
+      password: '$2a$10$hashedpassword',
+      role: 'admin',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      name: '김트레이너',
+      email: 'trainer@example.com',
+      password: '$2a$10$hashedpassword',
+      role: 'trainer',
+      created_at: new Date().toISOString()
+    }
+  ]
+  
+  // Add test data to database
+  testUsers.forEach(user => {
+    if (!userDB.findByEmail(user.email)) {
+      userDB.create(user)
+    }
+  })
+}
+```
