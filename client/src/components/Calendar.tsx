@@ -111,7 +111,7 @@ function Calendar({ sessions, onDateClick, selectedDate }: CalendarProps) {
               key={day.toString()}
               onClick={() => onDateClick(day)}
               className={`
-                relative p-1 sm:p-2 rounded-2xl transition-all duration-200 min-h-[80px] sm:min-h-[100px] flex flex-col items-start
+                relative p-1 sm:p-2 rounded-2xl transition-all duration-200 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-start
                 ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}
                 ${isSelected ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg scale-105' : 'hover:bg-gray-100/80 active:scale-95'}
                 ${isToday && !isSelected ? 'bg-blue-100 font-bold ring-2 ring-blue-300' : ''}
@@ -124,11 +124,11 @@ function Calendar({ sessions, onDateClick, selectedDate }: CalendarProps) {
               
               {/* 세션 정보 표시 (회원명 + 시간) */}
               {dateSessions.length > 0 && (
-                <div className="w-full space-y-0.5 mt-2">
+                <div className="w-full space-y-0.5 mt-2 flex flex-col items-center">
                   {(Array.isArray(dateSessions) ? dateSessions.slice(0, 3) : []).map((session, idx) => (
                     <div
                       key={session.id}
-                      className={`text-xs px-1 py-0.5 rounded truncate ${
+                      className={`text-xs px-1 py-0.5 rounded w-full max-w-[90%] ${
                         isSelected 
                           ? 'bg-white/20 text-white' 
                           : sessionStatus === 'confirmed' 
